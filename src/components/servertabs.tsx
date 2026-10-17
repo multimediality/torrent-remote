@@ -52,7 +52,7 @@ export const ServerTabs = React.forwardRef<ServerTabsRef, ServerTabsProps>(funct
     useEffect(() => {
         config.setOpenTabs(tabs.openTabs, tabs.currentTab);
         if (tabs.currentTab < 0) {
-            void appWindow.setTitle("Transmission GUI");
+            void appWindow.setTitle("Torrent Remote");
         }
     }, [config, tabs]);
 

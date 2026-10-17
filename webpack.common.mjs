@@ -54,7 +54,7 @@ export default (mode) => ({
     },
     plugins: [
         new HtmlWebpackPlugin({
-            title: "Transmission GUI",
+            title: "Torrent Remote",
             template: "src/index.html",
             excludeChunks: ["createtorrent"],
             templateParameters: {

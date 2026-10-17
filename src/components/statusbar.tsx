@@ -97,7 +97,7 @@ export function Statusbar({ session, torrents, filteredTorrents, selectedTorrent
         const speeds = `↓${downRate}/s ↑${upRate}/s`;
         document.title = `${speeds} - Torrent Remote`;
         if (TAURI) {
-            void appWindow.setTitle(`Transmission GUI - ${serverConfig.name} (${speeds})`);
+            void appWindow.setTitle(`Torrent Remote - ${serverConfig.name} (${speeds})`);
         }
     }, [serverConfig, downRate, upRate]);
 

@@ -16,6 +16,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use std::sync::{Arc, Mutex};
+use std::time::Duration;
 
 use tauri::{
     async_runtime,
@@ -23,9 +24,10 @@ use tauri::{
     tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
     AppHandle, Emitter, Listener, Manager, State, WebviewWindow, WebviewWindowBuilder,
 };
+use tauri_plugin_window_state::AppHandleExt;
 use tokio::sync::oneshot;
 
-use crate::ListenerHandle;
+use crate::{window_state_flags, ListenerHandle};
 
 pub const TRAY_ID: &str = "tray";
 
@@ -99,7 +101,11 @@ pub fn toggle_main_window(app: &AppHandle, window: Option<WebviewWindow>) {
         Some(window) => {
             if !window.is_visible().unwrap() {
                 window.show().ok();
-                window.unminimize().ok();
+                // unminimize restores the window on Windows, which would also
+                // demaximize a window that was only hidden, so keep it conditional
+                if window.is_minimized().unwrap_or(false) {
+                    window.unminimize().ok();
+                }
                 window.set_focus().ok();
                 window.emit("window-shown", "").ok();
                 set_tray_showhide_text(app, "Hide");
@@ -115,10 +121,17 @@ pub fn toggle_main_window(app: &AppHandle, window: Option<WebviewWindow>) {
                 WebviewWindowBuilder::new(app, "main", tauri::WebviewUrl::App("index.html".into()))
                     .title("Torrent Remote")
                     .inner_size(1024., 800.)
+                    .center()
+                    // Created hidden: the window-state plugin restores size,
+                    // position and maximized state on creation, then the
+                    // frontend shows the window once it has painted (see
+                    // RevealWindow in src/index.tsx). Showing it earlier gives
+                    // a blank flash followed by a visible resize on every launch.
+                    .visible(false)
                     .build()
                     .unwrap();
             set_tray_showhide_text(app, "Hide");
-            window.set_focus().ok();
+            reveal_fallback(window);
         }
     }
 }
@@ -140,6 +153,17 @@ pub fn exit(app: AppHandle) {
     });
 }
 
+/// Shows the window after a delay if the frontend has not done so, so a
+/// broken frontend never leaves the app running invisibly.
+fn reveal_fallback(window: WebviewWindow) {
+    async_runtime::spawn(async move {
+        tokio::time::sleep(Duration::from_secs(5)).await;
+        if !window.is_visible().unwrap_or(true) {
+            window.show().ok();
+        }
+    });
+}
+
 async fn close_main(window: WebviewWindow) {
     let (tx, rx) = oneshot::channel::<()>();
     let tx = Arc::new(Mutex::new(Some(tx)));
@@ -150,5 +174,7 @@ async fn close_main(window: WebviewWindow) {
     });
     window.emit("exit-requested", ()).ok();
     rx.await.ok();
+    // destroy() skips the close-requested event the plugin saves on
+    let _ = window.app_handle().save_window_state(window_state_flags());
     window.destroy().ok();
 }

@@ -137,10 +137,6 @@ interface Settings {
     servers: ServerConfig[],
     openTabs?: string[], // moved into app
     app: {
-        window: {
-            size: [number, number],
-            position: [number, number] | undefined,
-        },
         showTabStrip: boolean,
         openTabs: string[],
         lastTab: number,
@@ -250,10 +246,6 @@ const DefaultTrackerList = [
 const DefaultSettings: Settings = {
     servers: [],
     app: {
-        window: {
-            size: [1024, 800],
-            position: undefined,
-        },
         showTabStrip: true,
         openTabs: [],
         lastTab: 0,

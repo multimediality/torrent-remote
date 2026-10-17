@@ -18,7 +18,7 @@
  */
 
 import type { EventCallback } from "@tauri-apps/api/event";
-import type { CloseRequestedEvent, PhysicalPosition, PhysicalSize } from "@tauri-apps/api/window";
+import type { CloseRequestedEvent } from "@tauri-apps/api/window";
 import type { DragDropEvent } from "@tauri-apps/api/webview";
 
 export const TAURI = Object.prototype.hasOwnProperty.call(window, "__TAURI__");
@@ -44,32 +44,9 @@ export const appWindow = {
         await realAppWindow?.onCloseRequested(handler),
     onFocusChanged: async (handler: EventCallback<boolean>) =>
         await realAppWindow?.onFocusChanged(handler),
-    onResized: async (handler: EventCallback<PhysicalSize>) =>
-        await realAppWindow?.onResized(handler),
-    onMoved: async (handler: EventCallback<PhysicalPosition>) =>
-        await realAppWindow?.onMoved(handler),
-
-    getSize: async () => {
-        const PhysicalSize = (await import(/* webpackMode: "lazy-once" */ "@tauri-apps/api/window")).PhysicalSize;
-        return await realAppWindow?.innerSize() || new PhysicalSize(1024, 800);
-    },
-    setSize: async (size: [number, number]) => {
-        if (realAppWindow !== undefined) {
-            const PhysicalSize = (await import(/* webpackMode: "lazy-once" */ "@tauri-apps/api/window")).PhysicalSize;
-            await realAppWindow.setSize(new PhysicalSize(...size));
-        }
-    },
-    setPosition: async (position: [number, number]) => {
-        if (realAppWindow !== undefined) {
-            const PhysicalPosition = (await import(/* webpackMode: "lazy-once" */ "@tauri-apps/api/window")).PhysicalPosition;
-            await realAppWindow.setPosition(new PhysicalPosition(...position));
-        }
-    },
-
     isMinimized: async () => await realAppWindow?.isMinimized() ?? false,
     hide: async () => await realAppWindow?.hide(),
     show: async () => await realAppWindow?.show(),
-    center: async () => await realAppWindow?.center(),
     unminimize: async () => await realAppWindow?.unminimize(),
     setFocus: async () => await realAppWindow?.setFocus(),
     setTitle: async (title: string) => await realAppWindow?.setTitle(title),

@@ -24,7 +24,7 @@ urlencoding = "^2.1"
 hyper = { version = "1", features = ["full"] }
 http-body-util = "*"
 hyper-util = { version = "^0.1", features = ["server-auto", "server-graceful"] }
-tokio = { version = "^1.53", features = ["net", "macros"] }
+tokio = { version = "^1.53", features = ["net", "macros", "time"] }
 serde = { version = "^1.0", features = ["derive"] }
 tauri = { version = "2.12.4", features = [ "devtools", "tray-icon"] }
 tauri-utils = "2.10.2"
@@ -37,6 +37,7 @@ tauri-plugin-fs = "2"
 tauri-plugin-dialog = "2"
 tauri-plugin-shell = "2"
 tauri-plugin-notification = "2"
+tauri-plugin-window-state = "2"
 dirs = "7.0.0"
 
 [dependencies.reqwest]

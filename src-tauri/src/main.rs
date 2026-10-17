@@ -27,6 +27,7 @@ use geoip::MmdbReaderHandle;
 use poller::PollerHandle;
 use tauri::{async_runtime, App, AppHandle, Listener, Manager, State};
 use tauri_plugin_cli::CliExt;
+use tauri_plugin_window_state::{AppHandleExt, StateFlags};
 use tokio::sync::RwLock;
 use torrentcache::TorrentCacheHandle;
 
@@ -65,6 +66,13 @@ fn handle_uris(app: &AppHandle, uris: Vec<String>) {
             println!("Unable to send args to listener: {:?}", e);
         }
     });
+}
+
+/// Window state persisted by tauri-plugin-window-state: size, position and
+/// maximized state. Visibility is excluded on purpose, otherwise a window
+/// hidden to the tray would be restored hidden on the next launch.
+pub fn window_state_flags() -> StateFlags {
+    StateFlags::all() & !StateFlags::VISIBLE
 }
 
 fn setup(app: &mut App) -> Result<(), Box<dyn std::error::Error>> {
@@ -141,6 +149,9 @@ fn setup(app: &mut App) -> Result<(), Box<dyn std::error::Error>> {
             println!("Exiting");
             let appc = app_clone.clone();
             let _ = app_clone.run_on_main_thread(move || {
+                // the plugin only saves on tauri's exit event, which this
+                // process::exit never reaches
+                let _ = appc.save_window_state(window_state_flags());
                 appc.cleanup_before_exit();
                 std::process::exit(0);
             });
@@ -148,6 +159,7 @@ fn setup(app: &mut App) -> Result<(), Box<dyn std::error::Error>> {
 
         let app_clone = app.clone();
         app.listen("window-hidden", move |_| {
+            let _ = app_clone.save_window_state(window_state_flags());
             tray::set_tray_showhide_text(&app_clone, "Show");
         })
     });
@@ -196,6 +208,13 @@ fn main() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_clipboard_manager::init())
+        .plugin(
+            tauri_plugin_window_state::Builder::new()
+                .with_state_flags(window_state_flags())
+                // only the main window, the create torrent windows have random labels
+                .with_filter(|label| label == "main")
+                .build(),
+        )
         .invoke_handler(tauri::generate_handler![
             commands::read_file,
             commands::remove_file,

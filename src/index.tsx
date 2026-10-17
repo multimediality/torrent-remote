@@ -21,7 +21,7 @@ import "css/loader.css";
 import { Config, ConfigContext } from "./config";
 import { createRoot } from "react-dom/client";
 import type { Root } from "react-dom/client";
-import React, { lazy, Suspense, useContext } from "react";
+import React, { lazy, Suspense, useContext, useEffect } from "react";
 import type { CSSProperties } from "react";
 const { TAURI, appWindow, invoke } = await import(/* webpackChunkName: "taurishim" */"taurishim");
 
@@ -77,18 +77,6 @@ function setupTauriEvents(config: Config, app: Root) {
     void appWindow.onFocusChanged(({ payload: focused }) => {
         void onFocusChange(focused, config);
     });
-
-    void appWindow.onResized(({ payload: size }) => {
-        if (size.width > 0 && size.height > 0) {
-            config.values.app.window.size = [size.width, size.height];
-        }
-    });
-
-    void appWindow.onMoved(({ payload: size }) => {
-        if (size.x > -32000 && size.y > -32000) {
-            config.values.app.window.position = [size.x, size.y];
-        }
-    });
 }
 
 function setupWebEvents(config: Config) {
@@ -99,40 +87,14 @@ function setupWebEvents(config: Config) {
     });
 }
 
-async function restoreWindow(config: Config) {
-    const positionWindow = async function () {
-        const pos = config.values.app.window.position;
-        if (pos?.length === 2 && pos?.[0] > -32000 && pos?.[1] > -32000) {
-            await appWindow.setPosition(pos);
-        } else {
-            await appWindow.center();
-        }
-    };
-
-    const sizeCheck = async function () {
-        const sz = await appWindow.getSize();
-        const delta = [sz.width - size[0], sz.height - size[1]];
-        if (delta[0] != 0 || delta[1] != 0) {
-            console.log("Window size delta", delta);
-            await appWindow.setSize([size[0] - delta[0], size[1] - delta[1]]);
-        }
-    };
-
-    const sleep20ms = async function () {
-        await new Promise<void>((r) => setTimeout(r, 20));
-    };
-
-    const size = config.values.app.window.size;
-
-    if (size.length === 2 && size[0] > 100 && size[1] > 100) {
-        await appWindow.setSize(size);
-
-        // Run the size verification a bit later to allow the window system to apply the size
-        // (on some platforms the immediate getSize() after setSize() returns the old value).
-        void sleep20ms().then(sizeCheck);
-    }
-
-    void positionWindow();
+// The main window is created hidden so that the window-state plugin can
+// restore its size, position and maximized state first (see tray.rs).
+// Reveal it as soon as React has painted something.
+function RevealWindow() {
+    useEffect(() => {
+        void appWindow.show().then(async () => await appWindow.setFocus());
+    }, []);
+    return null;
 }
 
 function Loader() {
@@ -175,8 +137,6 @@ async function run(config: Config) {
         if (config.values.app.showTrayIcon) {
             void invoke("create_tray");
         }
-
-        await restoreWindow(config);
     } else {
         setupWebEvents(config);
     }
@@ -184,6 +144,7 @@ async function run(config: Config) {
     app.render(
         <React.StrictMode>
             <ConfigContext.Provider value={config}>
+                {TAURI && <RevealWindow />}
                 <Suspense fallback={<Loader />}>
                     <CustomMantineProvider>
                         {TAURI && <TauriApp />}

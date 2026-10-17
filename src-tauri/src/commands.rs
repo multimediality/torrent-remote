@@ -25,8 +25,20 @@ use tauri::{Emitter, EventTarget, State};
 use crate::{
     createtorrent::{CreateCheckResult, CreationRequestsHandle, TorrentCreateInfo},
     poller::PollerConfig,
-    tray, PollerHandle,
+    tray, ListenerHandle, PollerHandle,
 };
+
+/// Base URL of the local proxy server the frontend sends RPC requests through.
+#[tauri::command]
+pub async fn backend_address(listener: State<'_, ListenerHandle>) -> Result<String, String> {
+    listener
+        .0
+        .read()
+        .await
+        .address()
+        .map(|addr| format!("http://{addr}"))
+        .ok_or_else(|| "proxy server is not running".to_string())
+}
 
 #[derive(serde::Serialize)]
 pub struct FileStats {

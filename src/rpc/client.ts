@@ -28,7 +28,8 @@ import type { Batcher } from "@yornaath/batshit";
 import { create, keyResolver } from "@yornaath/batshit";
 import { mergeTrackerLists } from "trutil";
 
-const RUST_BACKEND = "http://127.0.0.1:44327";
+const { backendUrl } = await import(/* webpackChunkName: "taurishim" */"taurishim");
+const RUST_BACKEND = backendUrl;
 
 class ApiError extends Error { }
 

@@ -61,10 +61,7 @@ fn handle_uris(app: &AppHandle, uris: Vec<String>) {
                 return;
             }
         }
-        let listener = listener_lock.read().await;
-        if let Err(e) = listener.send(&uris, app_handle).await {
-            println!("Unable to send args to listener: {:?}", e);
-        }
+        ipc::deliver_args(&app_handle, uris);
     });
 }
 
@@ -132,17 +129,15 @@ fn setup(app: &mut App) -> Result<(), Box<dyn std::error::Error>> {
                 });
             });
             tray::toggle_main_window(&app, None);
+        } else {
+            eprintln!("Unable to start the local proxy server");
+            app.exit(1);
+            return;
         }
+        torrents.extend(listener.take_pending());
         drop(listener);
 
-        let app_clone = app.clone();
-        async_runtime::spawn(async move {
-            let mut listener = listener_lock.write().await;
-            torrents.extend(listener.take_pending());
-            if let Err(e) = listener.send(&torrents, app_clone).await {
-                println!("Unable to send args to listener: {e}");
-            }
-        });
+        ipc::deliver_args(&app, torrents);
 
         let app_clone = app.clone();
         app.listen("app-exit", move |_| {
@@ -154,7 +149,7 @@ fn setup(app: &mut App) -> Result<(), Box<dyn std::error::Error>> {
         app.listen("window-hidden", move |_| {
             let _ = app_clone.save_window_state(window_state_flags());
             tray::set_tray_showhide_text(&app_clone, "Show");
-        })
+        });
     });
 
     Ok(())
@@ -195,6 +190,26 @@ fn main() {
     let ipc = ipc::Ipc::new();
 
     let app_builder = tauri::Builder::default()
+        // must be the first plugin. The lock is keyed by the app identifier,
+        // so other Tauri apps never collide with it. A second launch exits
+        // right away and its arguments arrive here in the running instance.
+        .plugin(tauri_plugin_single_instance::init(|app, argv, _cwd| {
+            let args: Vec<String> = argv
+                .into_iter()
+                .skip(1)
+                .filter(|a| !a.starts_with('-'))
+                .collect();
+            if args.is_empty() {
+                match app.get_webview_window("main") {
+                    Some(window) if window.is_visible().unwrap_or(false) => {
+                        window.set_focus().ok();
+                    }
+                    window => tray::toggle_main_window(app, window),
+                }
+            } else {
+                ipc::deliver_args(app, args);
+            }
+        }))
         .plugin(tauri_plugin_cli::init())
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_shell::init())
@@ -224,6 +239,7 @@ fn main() {
             commands::create_tray,
             commands::save_text_file,
             commands::load_text_file,
+            commands::backend_address,
         ])
         .manage(ListenerHandle(Arc::new(RwLock::new(ipc))))
         .manage(TorrentCacheHandle::default())

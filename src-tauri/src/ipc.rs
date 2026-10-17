@@ -17,7 +17,7 @@
 
 use std::error::Error;
 use std::io;
-use std::net::IpAddr;
+use std::net::{IpAddr, SocketAddr};
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -30,18 +30,19 @@ use hyper::header::{
 };
 use hyper::service::service_fn;
 use hyper::{HeaderMap, Method, Request, Response, StatusCode};
-use tauri::{async_runtime, AppHandle, Emitter, Manager};
+use tauri::{async_runtime, AppHandle, Emitter, Manager, State};
 use tokio::net::TcpListener;
 use tokio::sync::oneshot::Receiver;
 use tokio::sync::{oneshot, OwnedSemaphorePermit, Semaphore};
 
 use crate::torrentcache::process_response;
 use crate::tray::toggle_main_window;
+use crate::ListenerHandle;
 
-// Also the single-instance lock: a second launch finds the port taken,
-// forwards its arguments here and exits. Deliberately differs from the
-// port TrguiNG uses so both apps can run side by side.
-const ADDRESS: &str = "127.0.0.1:44327";
+// The proxy server binds a random free port on the loopback interface, the
+// frontend asks for it with the backend_address command. Single instance
+// handling is done by tauri-plugin-single-instance, not by this port.
+const BIND_ADDRESS: &str = "127.0.0.1:0";
 const ALLOW_ORIGINS: &[&str] = if cfg!(feature = "custom-protocol") {
     &["tauri://localhost", "http://tauri.localhost"]
 } else {
@@ -122,7 +123,6 @@ fn make_body<T: Into<Bytes>>(chunk: T) -> BoxBody<Bytes, hyper::Error> {
 
 async fn http_response(
     app: AppHandle,
-    args_lock: Arc<Semaphore>,
     req: Request<Incoming>,
 ) -> hyper::Result<Response<BoxBody<Bytes, hyper::Error>>> {
     let content_type = req
@@ -135,19 +135,6 @@ async fn http_response(
     }
 
     match (req.method(), req.uri().path()) {
-        (&Method::POST, "/args") => {
-            let payload = req.collect().await?.to_bytes();
-
-            if app.get_webview_window("main").is_none() {
-                toggle_main_window(&app, None);
-            }
-
-            let lock = args_lock.acquire().await.unwrap();
-            send_payload(&app, payload).await;
-            drop(lock);
-
-            Ok(Response::builder().body(make_body("Torrent Remote OK")).unwrap())
-        }
         (&Method::OPTIONS, _) => {
             let mut response = Response::builder()
                 .status(200u16)
@@ -320,6 +307,29 @@ fn convert_response(response: &reqwest::Response) -> tauri::http::response::Buil
     hyper_response
 }
 
+/// Delivers torrent files and magnet links passed on the command line to the
+/// frontend, opening the main window first if needed. Waits until the
+/// frontend signalled that its listener is ready (listener-start).
+pub fn deliver_args(app: &AppHandle, args: Vec<String>) {
+    if args.is_empty() {
+        return;
+    }
+    let app = app.clone();
+    async_runtime::spawn(async move {
+        let args_sem = {
+            let listener_state: State<ListenerHandle> = app.state();
+            let listener = listener_state.0.read().await;
+            listener.args_sem.clone()
+        };
+        if app.get_webview_window("main").is_none() {
+            toggle_main_window(&app, None);
+        }
+        let lock = args_sem.acquire().await.unwrap();
+        send_payload(&app, Bytes::from(serde_json::to_vec(&args).unwrap())).await;
+        drop(lock);
+    });
+}
+
 async fn send_payload(app: &AppHandle, payload: Bytes) {
     app.get_webview_window("main")
         .unwrap()
@@ -330,15 +340,10 @@ async fn send_payload(app: &AppHandle, payload: Bytes) {
         .unwrap();
 }
 
-async fn http_server(
-    app: AppHandle,
-    args_sem: Arc<Semaphore>,
-    rx_stop: Receiver<()>,
-    listener: TcpListener,
-) {
+async fn http_server(app: AppHandle, rx_stop: Receiver<()>, listener: TcpListener) {
     let server = hyper_util::server::conn::auto::Builder::new(hyper_util::rt::TokioExecutor::new());
     let graceful = hyper_util::server::graceful::GracefulShutdown::new();
-    let func = move |req| http_response(app.clone(), args_sem.clone(), req);
+    let func = move |req| http_response(app.clone(), req);
     tokio::pin!(rx_stop);
 
     loop {
@@ -383,6 +388,7 @@ async fn http_server(
 
 pub struct Ipc {
     pub listening: bool,
+    address: Option<SocketAddr>,
     listener: Option<TcpListener>,
     stop_signal: Option<oneshot::Sender<()>>,
     args_sem: Arc<Semaphore>,
@@ -394,6 +400,7 @@ impl Ipc {
     pub fn new() -> Self {
         Self {
             listening: false,
+            address: None,
             listener: None,
             stop_signal: Default::default(),
             args_sem: Semaphore::new(1).into(),
@@ -414,10 +421,16 @@ impl Ipc {
     pub async fn init(&mut self) {
         self.args_lock = self.args_sem.clone().acquire_owned().await.ok();
 
-        if let Ok(listener) = TcpListener::bind(ADDRESS).await {
+        if let Ok(listener) = TcpListener::bind(BIND_ADDRESS).await {
+            self.address = listener.local_addr().ok();
             self.listener = Some(listener);
             self.listening = true;
         }
+    }
+
+    /// Address the proxy server listens on, once init() succeeded.
+    pub fn address(&self) -> Option<SocketAddr> {
+        self.address
     }
 
     pub async fn listen(&mut self, app: &AppHandle) -> Result<(), &str> {
@@ -425,7 +438,6 @@ impl Ipc {
             return Err("No TCP listener");
         }
 
-        let args_sem = self.args_sem.clone();
         let app = app.clone();
 
         let (tx_stop, rx_stop) = oneshot::channel::<()>();
@@ -433,7 +445,7 @@ impl Ipc {
         self.stop_signal = Some(tx_stop);
 
         async_runtime::spawn(async move {
-            http_server(app, args_sem, rx_stop, tcp_listener).await;
+            http_server(app, rx_stop, tcp_listener).await;
         });
 
         Ok(())
@@ -455,42 +467,5 @@ impl Ipc {
         }
         self.listener = None;
         self.listening = false;
-    }
-
-    pub async fn send(&self, args: &Vec<String>, app: AppHandle) -> Result<(), String> {
-        let client = reqwest::Client::builder()
-            .connect_timeout(Duration::from_secs(3))
-            .read_timeout(Duration::from_secs(10))
-            .timeout(Duration::from_secs(10))
-            .no_proxy()
-            .build()
-            .expect("Failed to initialize http client");
-
-        let req = client
-            .post(format!("http://{ADDRESS}/args"))
-            .header(tauri::http::header::CONTENT_TYPE, "application/json")
-            .body(reqwest::Body::from(serde_json::to_vec(args).unwrap()));
-
-        let should_stop = !self.listening;
-
-        async_runtime::spawn(async move {
-            if let Ok(resp) = req.send().await {
-                if let Ok(resp_bytes) = resp.bytes().await {
-                    println!(
-                        "Got response: {}",
-                        std::str::from_utf8(&resp_bytes).unwrap()
-                    );
-                }
-            }
-
-            if should_stop {
-                let _ = app.clone().run_on_main_thread(move || {
-                    app.cleanup_before_exit();
-                    std::process::exit(0);
-                });
-            }
-        });
-
-        Ok(())
     }
 }

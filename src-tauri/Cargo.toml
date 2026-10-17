@@ -38,6 +38,7 @@ tauri-plugin-dialog = "2"
 tauri-plugin-shell = "2"
 tauri-plugin-notification = "2"
 tauri-plugin-window-state = "2"
+tauri-plugin-single-instance = "2"
 dirs = "7.0.0"
 
 [dependencies.reqwest]

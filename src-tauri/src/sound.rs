@@ -17,15 +17,15 @@
 
 use std::io::Cursor;
 
-use rodio::{Decoder, OutputStream, Sink};
+use rodio::{Decoder, DeviceSinkBuilder, Player};
 
 static PING: &[u8] = include_bytes!("../sound/ping.mp3");
 
 pub fn play_ping() {
-    if let Ok((_stream, stream_handle)) = OutputStream::try_default() {
+    if let Ok(stream) = DeviceSinkBuilder::open_default_sink() {
         let source = Decoder::new(Cursor::new(PING)).unwrap();
-        let sink = Sink::try_new(&stream_handle).unwrap();
-        sink.append(source);
-        sink.sleep_until_end();
+        let player = Player::connect_new(stream.mixer());
+        player.append(source);
+        player.sleep_until_end();
     };
 }

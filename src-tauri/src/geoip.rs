@@ -62,17 +62,15 @@ pub async fn lookup(app: &AppHandle, ips: Vec<IpAddr>) -> Vec<LookupResult> {
         .into_iter()
         .map(|ip| {
             match reader
-                .lookup::<maxminddb::geoip2::Country>(ip)
+                .lookup(ip)
                 .ok()
-                .flatten()
-                .and_then(|c| c.country)
+                .and_then(|r| r.decode::<maxminddb::geoip2::Country>().ok().flatten())
+                .map(|c| c.country)
             {
                 Some(country) => LookupResult {
                     ip,
                     iso_code: country.iso_code.map(|c| c.to_string()),
-                    name: country
-                        .names
-                        .and_then(|names| names.get("en").map(|s| s.to_string())),
+                    name: country.names.english.map(|s| s.to_string()),
                 },
                 None => LookupResult {
                     ip,

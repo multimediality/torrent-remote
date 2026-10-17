@@ -12,39 +12,39 @@ rust-version = "1.77"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [build-dependencies]
-tauri-build = { version = "2", features = [] }
+tauri-build = { version = "2.7.3", features = [] }
 
 
 [dependencies]
 serde_json = "^1.0"
-base64 = "^0.22"
+base64 = "^0.23"
 lava_torrent = { git = "https://github.com/openscopeproject/lava_torrent", branch = "patches" }
 # lava_torrent = { path = "../../lava_torrent" }
 urlencoding = "^2.1"
 hyper = { version = "1", features = ["full"] }
 http-body-util = "*"
 hyper-util = { version = "^0.1", features = ["server-auto", "server-graceful"] }
-tokio = { version = "^1.28", features = ["net", "macros"] }
+tokio = { version = "^1.53", features = ["net", "macros"] }
 serde = { version = "^1.0", features = ["derive"] }
-tauri = { version = "2.12.0", features = [ "devtools", "tray-icon"] }
-tauri-utils = "2.8.0"
-opener = { version = "0.7", features = ["reveal"], default-features = false }
-rodio = { version = "^0.20", features = ["mp3"], default-features = false }
-maxminddb = "^0.26"
+tauri = { version = "2.12.4", features = [ "devtools", "tray-icon"] }
+tauri-utils = "2.10.2"
+opener = { version = "0.9", features = ["reveal"], default-features = false }
+rodio = { version = "^0.23", features = ["playback", "mp3"], default-features = false }
+maxminddb = "^0.32"
 font-loader = "0.11.0"
-tauri-plugin-clipboard-manager = "2.3.0"
+tauri-plugin-clipboard-manager = "2.5.0"
 tauri-plugin-fs = "2"
 tauri-plugin-dialog = "2"
 tauri-plugin-shell = "2"
 tauri-plugin-notification = "2"
-dirs = "6.0.0"
+dirs = "7.0.0"
 
 [dependencies.reqwest]
 version = "*"
 features = ["native-tls", "socks", "gzip", "deflate"]
 
 [target.'cfg(windows)'.dependencies]
-winreg = "^0.55.0"
+winreg = "^0.56.0"
 
 [target.'cfg(target_os = "macos")'.dependencies]
 

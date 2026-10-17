@@ -23,6 +23,7 @@ import common from "./webpack.common.mjs";
 export default merge(common("development"), {
     devtool: "source-map",
     devServer: {
+        port: 8787,
         static: "./dist",
         client: {
             overlay: true,

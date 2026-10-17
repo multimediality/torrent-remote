@@ -42,7 +42,8 @@ const ADDRESS: &str = "127.0.0.1:44321";
 const ALLOW_ORIGINS: &[&str] = if cfg!(feature = "custom-protocol") {
     &["tauri://localhost", "http://tauri.localhost"]
 } else {
-    &["http://localhost:8080"]
+    // dev build: must match build.devUrl in tauri.conf.json
+    &["http://localhost:8787"]
 };
 const TRANSMISSION_SESSION_ID: &str = "X-Transmission-Session-Id";
 

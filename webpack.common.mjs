@@ -29,7 +29,6 @@ import process from "process";
 
 export const __dirname = url.fileURLToPath(new URL(".", import.meta.url));
 
-const tsConfig = JSON.parse(await readFile("./tsconfig.json"));
 const tauriConf = JSON.parse(await readFile("./src-tauri/tauri.conf.json"));
 
 const gitVersion = process.env.TORRENT_REMOTE_VERSION ?? execaSync("git", ["describe", "--tags", "--dirty", "--always"]).stdout;
@@ -135,7 +134,7 @@ export default (mode) => ({
         extensions: [".tsx", ".ts", ".js"],
         modules: [
             path.resolve(__dirname, "node_modules"),
-            path.resolve(__dirname, tsConfig.compilerOptions.baseUrl),
+            path.resolve(__dirname, "src"),
         ],
     },
     // cache: false,

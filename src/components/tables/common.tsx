@@ -55,15 +55,15 @@ function useTable<TData>(
     getSubRows?: (r: TData) => TData[],
     onVisibilityChange?: React.Dispatch<VisibilityState>,
 ): [
-        Table<TData>,
-        VisibilityState,
-        (v: VisibilityState) => void,
-        ColumnOrderState,
-        (o: ColumnOrderState) => void,
-        ColumnSizingState,
-        SortingState,
-        Set<string>,
-    ] {
+    Table<TData>,
+    VisibilityState,
+    (v: VisibilityState) => void,
+    ColumnOrderState,
+    (o: ColumnOrderState) => void,
+    ColumnSizingState,
+    SortingState,
+    Set<string>,
+] {
     const config = useContext(ConfigContext);
 
     const [columnVisibility, setColumnVisibility] =

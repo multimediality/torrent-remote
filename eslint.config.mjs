@@ -1,6 +1,5 @@
 import react from "eslint-plugin-react";
 import reactHooks from "eslint-plugin-react-hooks";
-import { fixupPluginRules } from "@eslint/compat";
 import globals from "globals";
 import eslint from "@eslint/js";
 import tseslint from "typescript-eslint";
@@ -19,7 +18,7 @@ export default tseslint.config(
 
         plugins: {
             react,
-            "react-hooks": fixupPluginRules(reactHooks),
+            "react-hooks": reactHooks,
             "@stylistic": stylistic,
         },
 

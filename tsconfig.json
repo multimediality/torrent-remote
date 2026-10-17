@@ -1,15 +1,18 @@
 {
     "compilerOptions": {
-        "baseUrl": "src",
+        "paths": {
+            "*": ["./src/*"]
+        },
         "alwaysStrict": true,
+        "rootDir": "./src",
         "outDir": "./dist/",
         "sourceMap": true,
         "strict": true,
         "module": "ES2022",
-        "target": "ES2022",
+        "target": "ES2025",
         "jsx": "react",
         "allowJs": false,
-        "moduleResolution": "node",
+        "moduleResolution": "bundler",
         "esModuleInterop": true,
         "resolveJsonModule": true,
         "types": []

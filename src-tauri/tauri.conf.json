@@ -65,7 +65,7 @@
   "build": {
     "beforeBuildCommand": "npm run webpack-prod",
     "frontendDist": "../dist",
-    "beforeDevCommand": "",
+    "beforeDevCommand": "npm run webpack-serve",
     "devUrl": "http://localhost:8787/"
   },
   "productName": "Torrent Remote",

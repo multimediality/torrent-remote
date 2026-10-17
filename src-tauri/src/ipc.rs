@@ -386,6 +386,11 @@ async fn http_server(app: AppHandle, rx_stop: Receiver<()>, listener: TcpListene
     }
 }
 
+/// Address of the proxy server, set once at startup and read by the
+/// backend_address command without touching the Ipc lock.
+#[derive(Default)]
+pub struct ProxyAddress(pub std::sync::OnceLock<SocketAddr>);
+
 pub struct Ipc {
     pub listening: bool,
     address: Option<SocketAddr>,

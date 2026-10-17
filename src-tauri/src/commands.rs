@@ -24,18 +24,17 @@ use tauri::{Emitter, EventTarget, State};
 
 use crate::{
     createtorrent::{CreateCheckResult, CreationRequestsHandle, TorrentCreateInfo},
+    ipc::ProxyAddress,
     poller::PollerConfig,
-    tray, ListenerHandle, PollerHandle,
+    tray, PollerHandle,
 };
 
 /// Base URL of the local proxy server the frontend sends RPC requests through.
 #[tauri::command]
-pub async fn backend_address(listener: State<'_, ListenerHandle>) -> Result<String, String> {
-    listener
-        .0
-        .read()
-        .await
-        .address()
+pub fn backend_address(address: State<ProxyAddress>) -> Result<String, String> {
+    let address = address.0.get();
+    println!("Proxy address requested by frontend: {address:?}");
+    address
         .map(|addr| format!("http://{addr}"))
         .ok_or_else(|| "proxy server is not running".to_string())
 }

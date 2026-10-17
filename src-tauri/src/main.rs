@@ -109,6 +109,10 @@ fn setup(app: &mut App) -> Result<(), Box<dyn std::error::Error>> {
 
         let mut listener = listener_lock.write().await;
         listener.init().await;
+        if let Some(addr) = listener.address() {
+            let proxy_address: State<ipc::ProxyAddress> = app.state();
+            proxy_address.0.set(addr).ok();
+        }
         listener.listen(&app).await.ok();
 
         if listener.listening {
@@ -242,6 +246,7 @@ fn main() {
             commands::backend_address,
         ])
         .manage(ListenerHandle(Arc::new(RwLock::new(ipc))))
+        .manage(ipc::ProxyAddress::default())
         .manage(TorrentCacheHandle::default())
         .manage(PollerHandle::default())
         .manage(MmdbReaderHandle::default())

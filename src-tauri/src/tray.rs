@@ -145,11 +145,7 @@ pub fn exit(app: AppHandle) {
         let listener_state: State<ListenerHandle> = app.state();
         let mut listener = listener_state.0.write().await;
         listener.stop();
-        let appc = app.clone();
-        let _ = app.run_on_main_thread(move || {
-            appc.cleanup_before_exit();
-            std::process::exit(0);
-        });
+        app.exit(0);
     });
 }
 

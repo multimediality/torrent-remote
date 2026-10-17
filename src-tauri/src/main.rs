@@ -147,14 +147,7 @@ fn setup(app: &mut App) -> Result<(), Box<dyn std::error::Error>> {
         let app_clone = app.clone();
         app.listen("app-exit", move |_| {
             println!("Exiting");
-            let appc = app_clone.clone();
-            let _ = app_clone.run_on_main_thread(move || {
-                // the plugin only saves on tauri's exit event, which this
-                // process::exit never reaches
-                let _ = appc.save_window_state(window_state_flags());
-                appc.cleanup_before_exit();
-                std::process::exit(0);
-            });
+            app_clone.exit(0);
         });
 
         let app_clone = app.clone();
@@ -263,7 +256,10 @@ fn main() {
         if !has_visible_windows => {
             tray::toggle_main_window(app_handle, app_handle.get_webview_window("main"));
         }
-        tauri::RunEvent::ExitRequested { api, .. } => {
+        // Closing the last window must not end the app, it keeps running in
+        // the tray. An explicit app.exit() carries a code and goes through so
+        // that the regular Tauri exit hooks run (window state is saved there).
+        tauri::RunEvent::ExitRequested { api, code: None, .. } => {
             api.prevent_exit();
             tray::set_tray_showhide_text(app_handle, "Show");
         }

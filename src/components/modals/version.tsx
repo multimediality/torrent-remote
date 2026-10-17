@@ -1,6 +1,7 @@
 /**
- * TrguiNG - next gen remote GUI for transmission torrent daemon
+ * Torrent Remote - remote GUI for transmission torrent daemon
  * Copyright (C) 2023  qu1ck (mail at qu1ck.org)
+ * Copyright (C) 2026  Steven Demanett
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published
@@ -57,7 +58,7 @@ export function VersionModal({ opened, close }: ModalState) {
             centered
             p="lg"
             styles={{ header: { padding: "1em", alignItems: "start" } }}
-            title={<Text size="2em" fw="bold">TrguiNG</Text>}
+            title={<Text size="2em" fw="bold">Torrent Remote</Text>}
         >
             <Text>
                 Remote interface for&nbsp;
@@ -77,7 +78,7 @@ export function VersionModal({ opened, close }: ModalState) {
                     <Grid.Col span={4}>Source code</Grid.Col>
                     <Grid.Col span={8}>
                         <Box component="span" mr="sm"><Github /></Box>
-                        <Anchor href="https://github.com/openscopeproject/trguing/" target="_blank" rel="noreferrer">github</Anchor>
+                        <Anchor href="https://github.com/scdemanett/torrent-remote/" target="_blank" rel="noreferrer">github</Anchor>
                     </Grid.Col>
                     <Grid.Col mt="xl">{TAURI && <Anchor href="https://db-ip.com" target="_blank" rel="noreferrer">IP Geolocation by DB-IP</Anchor>}</Grid.Col>
                 </Grid>

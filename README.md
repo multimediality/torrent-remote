@@ -1,13 +1,10 @@
-# TrguiNG
+# Torrent Remote
 **Remote GUI for Transmission torrent daemon**
 
-![GitHub release](https://img.shields.io/github/v/release/OpenScopeProject/TrguiNG)
-![Downloads](https://img.shields.io/github/downloads/OpenScopeProject/TrguiNG/total)
-![Lint status](https://img.shields.io/github/actions/workflow/status/OpenScopeProject/TrguiNG/lint.yml?label=Lint&event=push)
+![Lint status](https://img.shields.io/github/actions/workflow/status/scdemanett/torrent-remote/lint.yml?label=Lint&event=push)
 
-![logo](https://i.imgur.com/QdgMWwW.png)
-
-`TrguiNG` is a rewrite of [transgui](https://github.com/transmission-remote-gui/transgui)
+`Torrent Remote` is a fork of [TrguiNG](https://github.com/openscopeproject/TrguiNG)
+by qu1ck, itself a rewrite of the [transgui](https://github.com/transmission-remote-gui/transgui)
 project using [tauri](https://tauri.app).
 Frontend is written in typescript with [react.js](https://react.dev/) and
 [mantine](https://mantine.dev/) library. Backend for the app is written in
@@ -15,10 +12,7 @@ Frontend is written in typescript with [react.js](https://react.dev/) and
 
 You can use this program in 2 ways: as a native Windows/Linux/Mac app and as a web gui
 served by transmission itself by setting `$TRANSMISSION_WEB_HOME` environment variable
-to point to TrguiNG web assets.
-
-There are screenshots of the app available on the
-[project wiki](https://github.com/openscopeproject/TrguiNG/wiki).
+to point to Torrent Remote web assets.
 
 Some differentiating features:
 
@@ -28,25 +22,24 @@ Some differentiating features:
 * Latest transmission features support: labels, bandwidth groups, sequential download
 * Dark and white theme
 
-Planned:
-
-* Better bandwidth groups support when API is ready (https://github.com/transmission/transmission/issues/5455)
-
 Transmission v2.40 or later is required.
 
 ## Downloads
 
-You can get the latest release from the
-[releases page](https://github.com/openscopeproject/TrguiNG/releases).
+Releases are published on the
+[releases page](https://github.com/scdemanett/torrent-remote/releases).
 
-Weekly builds of current development version are available from github
-[build workflows](https://github.com/openscopeproject/TrguiNG/actions/workflows/build.yml).
+Builds of the current development version are available from github
+[build workflows](https://github.com/scdemanett/torrent-remote/actions/workflows/build.yml).
 Pick the latest successful run and scroll down to the artifacts section.
+
+If you previously used TrguiNG, its settings file (`trguing.json` in your OS config folder)
+is imported automatically the first time Torrent Remote starts.
 
 ## Compiling
 
 Prerequisites:
-- [Node.js 20](https://nodejs.org/) or later
+- [Node.js 22](https://nodejs.org/) or later
 - [rust 1.92](https://www.rust-lang.org/) or later
 - Geoip lookup database in mmdb format, put it in `src-tauri`
    ```
@@ -78,24 +71,27 @@ $ npm run tauri-dev
 Webpack will automatically watch changes in `src/` and refresh the app view, tauri will watch changes
 in `src-tauri/` and rebuild/restart the app as needed.
 
-## How to use TrguiNG as a web interface
+## How to use Torrent Remote as a web interface
 
 Transmission supports custom web interfaces, all you have to do is run the daemon with
-`$TRANSMISSION_WEB_HOME` variable pointing to the web assets that transmissinon will serve
-over it's `.../transmission/web/` endpoint.
+`$TRANSMISSION_WEB_HOME` variable pointing to the web assets that transmission will serve
+over its `.../transmission/web/` endpoint.
 
 Example steps for debian:
-1. Download latest `trguing-web-xxxx.zip` zip from [releases](https://github.com/openscopeproject/TrguiNG/releases)
-   page.
+1. Download latest `torrent-remote-web-xxxx.zip` zip from the
+   [build workflows](https://github.com/scdemanett/torrent-remote/actions/workflows/build.yml)
+   artifacts or the [releases](https://github.com/scdemanett/torrent-remote/releases) page.
 2. Unpack it anywhere, make sure that the user transmission runs under (by default `debian-transmission`)
    has read permissions.
 3. Edit transmission daemon systemd unit file `/etc/systemd/system/multi-user.target.wants/transmission-daemon.service`
    and add following to `[Service]` section:
    ```
-   Environment=TRANSMISSION_WEB_HOME=/path/to/extracted/trguing/zip
+   Environment=TRANSMISSION_WEB_HOME=/path/to/extracted/torrent-remote/zip
    ```
 4. Reload the unit file with `sudo systemctl daemon-reload`
    and restart the service `sudo systemctl restart transmission-daemon`
 
 ## License
 Project is distributed under GNU Affero General Public License v3, see `LICENSE.txt` for details.
+
+Copyright (C) 2023 qu1ck (original TrguiNG author), Copyright (C) 2026 Steven Demanett.

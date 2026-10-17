@@ -1,5 +1,6 @@
-// TrguiNG - next gen remote GUI for transmission torrent daemon
+// Torrent Remote - remote GUI for transmission torrent daemon
 // Copyright (C) 2023  qu1ck (mail at qu1ck.org)
+// Copyright (C) 2026  Steven Demanett
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published
@@ -141,7 +142,7 @@ async fn http_response(
             send_payload(&app, payload).await;
             drop(lock);
 
-            Ok(Response::builder().body(make_body("TrguiNG OK")).unwrap())
+            Ok(Response::builder().body(make_body("Torrent Remote OK")).unwrap())
         }
         (&Method::OPTIONS, _) => {
             let mut response = Response::builder()
@@ -210,8 +211,8 @@ async fn proxy_fetch(
     process: bool,
 ) -> hyper::Result<Response<BoxBody<Bytes, hyper::Error>>> {
     let req_headers = req.headers().clone();
-    let toast = req_headers.get("X-TrguiNG-Toast").is_some();
-    let sound = req_headers.get("X-TrguiNG-Sound").is_some();
+    let toast = req_headers.get("X-TorrentRemote-Toast").is_some();
+    let sound = req_headers.get("X-TorrentRemote-Sound").is_some();
 
     if let Some(query) = req.uri().query() {
         let params: Vec<(&str, &str)> = query

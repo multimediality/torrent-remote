@@ -124,8 +124,8 @@ jobs:
         id: pack-webapp
         run: |
           GIT_VERSION=`git describe --tags --always`
-          zip -9 -r "trguing-web-$GIT_VERSION.zip" ./* -x create\* -x \*.map -x \*flag-icons\*
-          echo "ZIPFILE=trguing-web-$GIT_VERSION.zip" >> $GITHUB_OUTPUT
+          zip -9 -r "torrent-remote-web-$GIT_VERSION.zip" ./* -x create\* -x \*.map -x \*flag-icons\*
+          echo "ZIPFILE=torrent-remote-web-$GIT_VERSION.zip" >> $GITHUB_OUTPUT
 
       - uses: actions/upload-artifact@v6
         if: matrix.platform.os == 'ubuntu-24.04'
@@ -149,8 +149,8 @@ jobs:
           path: artifacts
       - name: Rename mac app archives
         run: |
-          mv artifacts/x86_64-apple-darwin/TrguiNG.app.tar.gz artifacts/x86_64-apple-darwin/TrguiNG_x86_64.app.tar.gz
-          mv artifacts/aarch64-apple-darwin/TrguiNG.app.tar.gz artifacts/aarch64-apple-darwin/TrguiNG_aarch64.app.tar.gz
+          mv "artifacts/x86_64-apple-darwin/Torrent Remote.app.tar.gz" artifacts/x86_64-apple-darwin/TorrentRemote_x86_64.app.tar.gz
+          mv "artifacts/aarch64-apple-darwin/Torrent Remote.app.tar.gz" artifacts/aarch64-apple-darwin/TorrentRemote_aarch64.app.tar.gz
       - name: Downloaded artifacts
         run: ls -lhR artifacts/
 

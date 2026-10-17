@@ -1,5 +1,5 @@
 {
-  "name": "trguing",
+  "name": "torrent-remote",
   "version": "1.5.1",
   "sideEffects": [
     "*.css"

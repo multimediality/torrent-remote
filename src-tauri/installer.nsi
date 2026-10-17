@@ -2,7 +2,7 @@
 ; https://github.com/tauri-apps/tauri/blob/tauri-v2.1.1/crates/tauri-bundler/src/bundle/windows/nsis/installer.nsi
 ; Only differences are:
 ; 1. the reinstall/uninstall page is skipped since
-;    for TrguiNG uninstall option is useless and doesn't work properly
+;    for Torrent Remote uninstall option is useless and doesn't work properly
 ;    if elevated privileges are required for uninstallation.
 ; 2. .torrent and magnet URI specific capabilities entries are added to registry
 Unicode true
@@ -60,6 +60,8 @@ ${StrLoc}
 !define MAINBINARYNAME "{{main_binary_name}}"
 !define MAINBINARYSRCPATH "{{main_binary_path}}"
 !define BUNDLEID "{{bundle_id}}"
+; Registry ProgID used for file/url associations, must match APP_NAME in src/integrations.rs
+!define PROGID "TorrentRemote"
 !define COPYRIGHT "{{copyright}}"
 !define OUTFILE "{{out_file}}"
 !define ARCH "{{arch}}"
@@ -194,9 +196,9 @@ VIAddVersionKey "ProductVersion" "${VERSION}"
 Var ReinstallPageCheck
 Page custom PageReinstall PageLeaveReinstall
 Function PageReinstall
-  ; ============ TrguiNG edit begin ===============
+  ; ============ Torrent Remote edit begin ===============
   Abort
-  ; ============ TrguiNG edit end ===============
+  ; ============ Torrent Remote edit end ===============
 
   ; Uninstall previous WiX installation if exists.
   ;
@@ -687,26 +689,26 @@ Section Install
     WriteRegStr SHCTX "Software\Classes\\{{protocol}}\shell\open\command" "" "$\"$INSTDIR\${MAINBINARYNAME}.exe$\" $\"%1$\""
   {{/each}}
 
-  ; ============ TrguiNG edit begin ===============
+  ; ============ Torrent Remote edit begin ===============
   ; Register Windows Capabilities
-  WriteRegStr SHCTX "Software\${PRODUCTNAME}\Capabilities" "ApplicationName" "${PRODUCTNAME}"
-  WriteRegStr SHCTX "Software\${PRODUCTNAME}\Capabilities" "ApplicationDescription" "Remote GUI for Transmission torrent daemon"
-  WriteRegStr SHCTX "Software\${PRODUCTNAME}\Capabilities\FileAssociations" ".torrent" "${PRODUCTNAME}.File.Torrent"
-  WriteRegStr SHCTX "Software\${PRODUCTNAME}\Capabilities\UrlAssociations" "magnet" "${PRODUCTNAME}.Url.Magnet"
-  WriteRegStr SHCTX "Software\RegisteredApplications" "${PRODUCTNAME}" "Software\${PRODUCTNAME}\Capabilities"
+  WriteRegStr SHCTX "Software\${PROGID}\Capabilities" "ApplicationName" "${PRODUCTNAME}"
+  WriteRegStr SHCTX "Software\${PROGID}\Capabilities" "ApplicationDescription" "Remote GUI for Transmission torrent daemon"
+  WriteRegStr SHCTX "Software\${PROGID}\Capabilities\FileAssociations" ".torrent" "${PROGID}.File.Torrent"
+  WriteRegStr SHCTX "Software\${PROGID}\Capabilities\UrlAssociations" "magnet" "${PROGID}.Url.Magnet"
+  WriteRegStr SHCTX "Software\RegisteredApplications" "${PROGID}" "Software\${PROGID}\Capabilities"
 
-  ; Register TrguiNG as an application
-  WriteRegStr SHCTX "Software\Classes\${PRODUCTNAME}\DefaultIcon" "" "$\"$INSTDIR\${MAINBINARYNAME}.exe$\",0"
-  WriteRegStr SHCTX "Software\Classes\${PRODUCTNAME}\shell\open\command" "" "$\"$INSTDIR\${MAINBINARYNAME}.exe$\" $\"%1$\""
+  ; Register Torrent Remote as an application
+  WriteRegStr SHCTX "Software\Classes\${PROGID}\DefaultIcon" "" "$\"$INSTDIR\${MAINBINARYNAME}.exe$\",0"
+  WriteRegStr SHCTX "Software\Classes\${PROGID}\shell\open\command" "" "$\"$INSTDIR\${MAINBINARYNAME}.exe$\" $\"%1$\""
 
-  ; Register RegisteredApplications so TrguiNG shows up as a selectable default app for .torrent files and MAGNET links
-  WriteRegStr SHCTX "Software\Classes\${PRODUCTNAME}.File.Torrent" "" "Torrent File"
-  WriteRegStr SHCTX "Software\Classes\${PRODUCTNAME}.File.Torrent\DefaultIcon" "" "$\"$INSTDIR\${MAINBINARYNAME}.exe$\",0"
-  WriteRegStr SHCTX "Software\Classes\${PRODUCTNAME}.File.Torrent\shell\open\command" "" "$\"$INSTDIR\${MAINBINARYNAME}.exe$\" $\"%1$\""
+  ; Register RegisteredApplications so Torrent Remote shows up as a selectable default app for .torrent files and MAGNET links
+  WriteRegStr SHCTX "Software\Classes\${PROGID}.File.Torrent" "" "Torrent File"
+  WriteRegStr SHCTX "Software\Classes\${PROGID}.File.Torrent\DefaultIcon" "" "$\"$INSTDIR\${MAINBINARYNAME}.exe$\",0"
+  WriteRegStr SHCTX "Software\Classes\${PROGID}.File.Torrent\shell\open\command" "" "$\"$INSTDIR\${MAINBINARYNAME}.exe$\" $\"%1$\""
 
-  WriteRegStr SHCTX "Software\Classes\${PRODUCTNAME}.Url.Magnet" "" "Magnet URI"
-  WriteRegStr SHCTX "Software\Classes\${PRODUCTNAME}.Url.Magnet\DefaultIcon" "" "$\"$INSTDIR\${MAINBINARYNAME}.exe$\",0"
-  WriteRegStr SHCTX "Software\Classes\${PRODUCTNAME}.Url.Magnet\shell\open\command" "" "$\"$INSTDIR\${MAINBINARYNAME}.exe$\" $\"%1$\""
+  WriteRegStr SHCTX "Software\Classes\${PROGID}.Url.Magnet" "" "Magnet URI"
+  WriteRegStr SHCTX "Software\Classes\${PROGID}.Url.Magnet\DefaultIcon" "" "$\"$INSTDIR\${MAINBINARYNAME}.exe$\",0"
+  WriteRegStr SHCTX "Software\Classes\${PROGID}.Url.Magnet\shell\open\command" "" "$\"$INSTDIR\${MAINBINARYNAME}.exe$\" $\"%1$\""
 
   ; Register .torrent and magenet
   WriteRegStr SHCTX "Software\Classes\.torrent" "Content Type" "application/x-bittorrent"
@@ -716,7 +718,7 @@ Section Install
 
   ; Inform windows explorer that the file associations changed, without requiring a reboot
   System::Call 'shell32::SHChangeNotify(i 0x08000000, i 0x0000, p 0, p 0)'
-  ; ============ TrguiNG edit end =================
+  ; ============ Torrent Remote edit end =================
 
   ; Create uninstaller
   WriteUninstaller "$INSTDIR\uninstall.exe"
@@ -853,21 +855,21 @@ Section Uninstall
     ${EndIf}
   {{/each}}
 
-  ; ============ TrguiNG edit begin ===============
+  ; ============ Torrent Remote edit begin ===============
   ; Delete Capabilities/RegisteredApplications and ProgIDs
-  DeleteRegKey SHCTX "Software\Classes\${PRODUCTNAME}.File.Torrent"
-  DeleteRegKey SHCTX "Software\Classes\${PRODUCTNAME}.Url.Magnet"
-  ; Delete TrguiNG itself and its Capabilities
-  DeleteRegKey SHCTX "Software\Classes\${PRODUCTNAME}"
-  DeleteRegKey SHCTX "Software\${PRODUCTNAME}\Capabilities"
-  DeleteRegKey /ifempty SHCTX "Software\${PRODUCTNAME}"
-  DeleteRegValue SHCTX "Software\RegisteredApplications" "${PRODUCTNAME}"
-  ; Also delete the default applications registration, if it's set as TrguiNG
+  DeleteRegKey SHCTX "Software\Classes\${PROGID}.File.Torrent"
+  DeleteRegKey SHCTX "Software\Classes\${PROGID}.Url.Magnet"
+  ; Delete Torrent Remote itself and its Capabilities
+  DeleteRegKey SHCTX "Software\Classes\${PROGID}"
+  DeleteRegKey SHCTX "Software\${PROGID}\Capabilities"
+  DeleteRegKey /ifempty SHCTX "Software\${PROGID}"
+  DeleteRegValue SHCTX "Software\RegisteredApplications" "${PROGID}"
+  ; Also delete the default applications registration, if it's set as Torrent Remote
   ReadRegStr $R7 SHCTX "Software\Classes\.torrent" ""
-  ${If} $R7 == "${PRODUCTNAME}"
+  ${If} $R7 == "${PROGID}"
     WriteRegStr SHCTX "Software\Classes\.torrent" "" ""
   ${EndIf}
-  ; ============ TrguiNG edit end =================
+  ; ============ Torrent Remote edit end =================
 
 
   ; Delete uninstaller

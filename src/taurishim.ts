@@ -1,6 +1,7 @@
 /**
- * TrguiNG - next gen remote GUI for transmission torrent daemon
+ * Torrent Remote - remote GUI for transmission torrent daemon
  * Copyright (C) 2023  qu1ck (mail at qu1ck.org)
+ * Copyright (C) 2026  Steven Demanett
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published
@@ -106,13 +107,39 @@ export async function makeCreateTorrentView() {
     }
 }
 
-const configFile = "trguing.json";
+const configFile = "torrent-remote.json";
+const configStorageKey = "torrent-remote-config";
+// Settings of the TrguiNG app this project was forked from.
+// They are imported once if no Torrent Remote config exists yet.
+const legacyConfigFile = "trguing.json";
+const legacyConfigStorageKey = "trguing-config";
 
 export async function readConfigText() {
     if (fs !== undefined) {
-        return await fs.readTextFile(configFile, { baseDir: fs.BaseDirectory.Config });
+        try {
+            return await fs.readTextFile(configFile, { baseDir: fs.BaseDirectory.Config });
+        } catch (e) {
+            // No config of our own yet, try to import the legacy one.
+            // If that is missing too, rethrow the original error so defaults are used.
+            let legacy: string;
+            try {
+                legacy = await fs.readTextFile(legacyConfigFile, { baseDir: fs.BaseDirectory.Config });
+            } catch {
+                throw e;
+            }
+            console.log(`Importing settings from ${legacyConfigFile}`);
+            await writeConfigText(legacy);
+            return legacy;
+        }
     } else {
-        return localStorage.getItem("trguing-config") ?? "{}";
+        const stored = localStorage.getItem(configStorageKey);
+        if (stored !== null) return stored;
+        const legacy = localStorage.getItem(legacyConfigStorageKey);
+        if (legacy !== null) {
+            localStorage.setItem(configStorageKey, legacy);
+            return legacy;
+        }
+        return "{}";
     }
 }
 
@@ -120,7 +147,7 @@ export async function writeConfigText(contents: string) {
     if (fs !== undefined) {
         await fs.writeTextFile(configFile, contents, { baseDir: fs.BaseDirectory.Config });
     } else {
-        localStorage.setItem("trguing-config", contents);
+        localStorage.setItem(configStorageKey, contents);
     }
 }
 

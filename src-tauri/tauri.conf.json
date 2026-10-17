@@ -18,7 +18,7 @@
         "template": "installer.nsi"
       }
     },
-    "publisher": "OpenScopeProject",
+    "publisher": "Steven Demanett",
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
@@ -68,13 +68,13 @@
     "beforeDevCommand": "",
     "devUrl": "http://localhost:8080/"
   },
-  "productName": "TrguiNG",
-  "mainBinaryName": "TrguiNG",
+  "productName": "Torrent Remote",
+  "mainBinaryName": "torrent-remote",
   "version": "1.5.1",
-  "identifier": "org.openscopeproject.trguing",
+  "identifier": "io.github.scdemanett.torrentremote",
   "plugins": {
     "cli": {
-      "description": "TrguiNG - Remote control GUI for the Transmission torrent daemon",
+      "description": "Torrent Remote - Remote control GUI for the Transmission torrent daemon",
       "args": [
         {
           "name": "torrent",

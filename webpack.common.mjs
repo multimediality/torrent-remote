@@ -1,6 +1,7 @@
 /**
- * TrguiNG - next gen remote GUI for transmission torrent daemon
+ * Torrent Remote - remote GUI for transmission torrent daemon
  * Copyright (C) 2023  qu1ck (mail at qu1ck.org)
+ * Copyright (C) 2026  Steven Demanett
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published
@@ -31,7 +32,7 @@ export const __dirname = url.fileURLToPath(new URL(".", import.meta.url));
 const tsConfig = JSON.parse(await readFile("./tsconfig.json"));
 const tauriConf = JSON.parse(await readFile("./src-tauri/tauri.conf.json"));
 
-const gitVersion = process.env.TRGUING_VERSION ?? execaSync("git", ["describe", "--tags", "--dirty", "--always"]).stdout;
+const gitVersion = process.env.TORRENT_REMOTE_VERSION ?? execaSync("git", ["describe", "--tags", "--dirty", "--always"]).stdout;
 const versionInfo = `{
     "gitVersion": "${gitVersion}",
     "backendVersion": "${tauriConf.version}",

@@ -1,6 +1,7 @@
 /**
- * TrguiNG - next gen remote GUI for transmission torrent daemon
+ * Torrent Remote - remote GUI for transmission torrent daemon
  * Copyright (C) 2023  qu1ck (mail at qu1ck.org)
+ * Copyright (C) 2026  Steven Demanett
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published
@@ -94,7 +95,7 @@ export function Statusbar({ session, torrents, filteredTorrents, selectedTorrent
 
     useEffect(() => {
         const speeds = `↓${downRate}/s ↑${upRate}/s`;
-        document.title = `${speeds} - TrguiNG`;
+        document.title = `${speeds} - Torrent Remote`;
         if (TAURI) {
             void appWindow.setTitle(`Transmission GUI - ${serverConfig.name} (${speeds})`);
         }

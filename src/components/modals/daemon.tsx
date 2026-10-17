@@ -1,6 +1,7 @@
 /**
- * TrguiNG - next gen remote GUI for transmission torrent daemon
+ * Torrent Remote - remote GUI for transmission torrent daemon
  * Copyright (C) 2023  qu1ck (mail at qu1ck.org)
+ * Copyright (C) 2026  Steven Demanett
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published
@@ -111,7 +112,7 @@ function DownloadPanel({ form, session }: { form: UseFormReturnType<FormValues>,
                                 <Text size="sm">
                                     This setting only applies to torrents added via the
                                     watch directory or by other clients that do not specify
-                                    the start parameter. TrguiNG sets the start parameter
+                                    the start parameter. Torrent Remote sets the start parameter
                                     based on your selection in the add torrent/magnet dialog.
                                 </Text>
                             </HoverCard.Dropdown>

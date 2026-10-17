@@ -165,7 +165,7 @@ export default (mode) => ({
                     name: "vendors/tanstack",
                 },
                 reactdnd: {
-                    test: /[\\/]node_modules[\\/]react-beautiful-dnd[\\/]/,
+                    test: /[\\/]node_modules[\\/]@hello-pangea[\\/]dnd[\\/]/,
                     name: "vendors/reactdnd",
                 },
                 tauri: {
@@ -193,7 +193,14 @@ export default (mode) => ({
         moduleIds: "deterministic",
         minimizer: [
             "...", // Keeps existing minimizers
-            mode === "production" ? new CssMinimizerPlugin() : null,
+            mode === "production"
+                ? new CssMinimizerPlugin({
+                    minimizerOptions: {
+                        // postcss-calc can not parse Mantine's nested calc() fallbacks
+                        preset: ["default", { calc: false }],
+                    },
+                })
+                : null,
         ],
     },
 });

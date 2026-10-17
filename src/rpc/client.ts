@@ -80,7 +80,7 @@ export class TransmissionClient {
     timeout: number;
     sessionInfo: SessionInfo;
     insecure: boolean;
-    ipsBatcher: Batcher<IpLookupResult, string>;
+    ipsBatcher: Batcher<IpLookupResult[], string, IpLookupResult>;
 
     constructor(connection: ServerConnection, toastNotifications: boolean, toastNotificationSound: boolean, timeout = 15) {
         this.url = encodeURIComponent(connection.url);
@@ -109,7 +109,7 @@ export class TransmissionClient {
             // TODO handle errors
             // console.log("Invalid URL", connection.url);
         }
-        this.ipsBatcher = create<IpLookupResult, string>({
+        this.ipsBatcher = create<IpLookupResult[], string, IpLookupResult>({
             fetcher: async (ips: string[]) => {
                 return await this.lookupIps(ips);
             },

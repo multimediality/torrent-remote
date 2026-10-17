@@ -43,7 +43,7 @@ export interface ModalCallbacks {
 interface ServerModalsProps {
     serverName: string,
     runUpdates: (run: boolean) => void,
-    tabsRef: React.RefObject<ServerTabsRef>,
+    tabsRef: React.RefObject<ServerTabsRef | null>,
 }
 
 function usePausingModalState(runUpdates: (run: boolean) => void): [boolean, () => void, () => void] {

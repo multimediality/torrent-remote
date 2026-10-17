@@ -93,7 +93,7 @@ export function EditLabelsModal(props: ModalState) {
                 title="Edit torrent labels"
             >
                 {rpcVersion < 16
-                    ? <Text color="red" fz="lg">Labels feature requires transmission 3.0 or later</Text>
+                    ? <Text c="red" fz="lg">Labels feature requires transmission 3.0 or later</Text>
                     : <>
                         <Text mb="md">Enter new labels for</Text>
                         <TorrentsNames />

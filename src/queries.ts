@@ -183,7 +183,7 @@ export function useMutateTorrent() {
             // some mutable fields like "files-unwanted" don't map directly to
             // proper torrent fields but it's ok to have some extra entrie in the object
             updateCachedTorrentFields(serverConfig.name, torrentIds, fields);
-            void queryClient.invalidateQueries(TorrentKeys.all(serverConfig.name));
+            void queryClient.invalidateQueries({ queryKey: TorrentKeys.all(serverConfig.name) });
         },
     });
 }
@@ -205,10 +205,10 @@ export function useMutateTorrentPath() {
         },
         onSuccess: (_, { torrentId, path, name }: TorrentPathMutationVariables) => {
             if (path.includes("/")) {
-                void queryClient.invalidateQueries(TorrentKeys.details(serverConfig.name, torrentId));
+                void queryClient.invalidateQueries({ queryKey: TorrentKeys.details(serverConfig.name, torrentId) });
             } else {
                 updateCachedTorrentFields(serverConfig.name, [torrentId], { name });
-                void queryClient.invalidateQueries(TorrentKeys.all(serverConfig.name));
+                void queryClient.invalidateQueries({ queryKey: TorrentKeys.all(serverConfig.name) });
             }
         },
     });
@@ -220,7 +220,7 @@ function useInvalidatingTorrentAction<ActionParams>(mutationFn: (params: ActionP
     return useMutation({
         mutationFn,
         onSuccess: () => {
-            void queryClient.invalidateQueries(TorrentKeys.all(serverConfig.name));
+            void queryClient.invalidateQueries({ queryKey: TorrentKeys.all(serverConfig.name) });
         },
     }).mutate;
 }
@@ -241,7 +241,7 @@ export function useAddTorrent(onSuccess: (response: unknown, vars: TorrentAddQue
         },
         onSuccess: (response: unknown, vars: TorrentAddQueryParams) => {
             onSuccess(response, vars);
-            void queryClient.invalidateQueries(TorrentKeys.all(serverConfig.name));
+            void queryClient.invalidateQueries({ queryKey: TorrentKeys.all(serverConfig.name) });
         },
         onError,
     });
@@ -321,7 +321,7 @@ export function useMutateSession() {
             await client.setSession(session);
         },
         onSuccess: () => {
-            void queryClient.invalidateQueries(SessionKeys.all(serverConfig.name));
+            void queryClient.invalidateQueries({ queryKey: SessionKeys.all(serverConfig.name) });
         },
     });
 }
@@ -341,12 +341,21 @@ export function useSessionStats(enabled: boolean) {
     });
 }
 
+const TestPortKey = (server: string) => [server, "test-port"] as const;
+
+export function useRemoveTestPortQuery() {
+    const serverConfig = useContext(ServerConfigContext);
+    return useCallback(() => {
+        queryClient.removeQueries({ queryKey: TestPortKey(serverConfig.name) });
+    }, [serverConfig.name]);
+}
+
 export function useTestPort(enabled: boolean) {
     const serverConfig = useContext(ServerConfigContext);
     const client = useTransmissionClient();
 
     return useQuery({
-        queryKey: [serverConfig.name, "test-port"],
+        queryKey: TestPortKey(serverConfig.name),
         staleTime: 1,
         enabled,
         queryFn: useCallback(async () => {
@@ -364,7 +373,7 @@ export function useUpdateBlocklist() {
             return await client.updateBlocklist();
         },
         onSuccess: () => {
-            void queryClient.refetchQueries(SessionKeys.full(serverConfig.name));
+            void queryClient.refetchQueries({ queryKey: SessionKeys.full(serverConfig.name) });
         },
     });
 }
@@ -409,7 +418,7 @@ export function useIpLookup(ip: string) {
     return useQuery({
         queryKey: ["ips", ip],
         staleTime: Infinity,
-        cacheTime: 10 * 60 * 1000,
+        gcTime: 10 * 60 * 1000,
         queryFn: async () => {
             return await client.ipsBatcher.fetch(ip);
         },

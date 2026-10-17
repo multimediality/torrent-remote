@@ -21,12 +21,15 @@ import { ActionIcon, Box, Group, Menu, TextInput } from "@mantine/core";
 import * as Icon from "react-bootstrap-icons";
 import classes from "./common.module.css";
 import type {
-    Table, ColumnDef, ColumnSizingState,
-    SortingState, VisibilityState, Row, Column, RowSelectionState,
+    RowData, Table, ReactTable, ColumnDef, ColumnSizingState,
+    SortingState, ColumnVisibilityState, Row, Column, RowSelectionState,
     ColumnOrderState, AccessorKeyColumnDef, Header, HeaderGroup,
 } from "@tanstack/react-table";
 import {
-    useReactTable, getCoreRowModel, getSortedRowModel, getExpandedRowModel, flexRender,
+    useTable as useTanstackTable, flexRender, tableFeatures,
+    rowSortingFeature, rowExpandingFeature, rowSelectionFeature,
+    columnSizingFeature, columnResizingFeature, columnOrderingFeature, columnVisibilityFeature,
+    createSortedRowModel, createExpandedRowModel, sortFns,
 } from "@tanstack/react-table";
 import type { Virtualizer } from "@tanstack/react-virtual";
 import { useVirtualizer } from "@tanstack/react-virtual";
@@ -34,8 +37,8 @@ import { ContextMenu, useContextMenu } from "components/contextmenu";
 import type { TableName } from "config";
 import { ConfigContext } from "config";
 import React, { memo, useReducer, useCallback, useContext, useEffect, useMemo, useRef, useState, useLayoutEffect } from "react";
-import type { DropResult } from "react-beautiful-dnd";
-import { DragDropContext, Draggable } from "react-beautiful-dnd";
+import type { DropResult } from "@hello-pangea/dnd";
+import { DragDropContext, Draggable } from "@hello-pangea/dnd";
 import { StrictModeDroppable } from "components/strictmodedroppable";
 import { eventHasModKey, hasEllipsis, reorderElements } from "trutil";
 import { useFontSize } from "themehooks";
@@ -46,18 +49,34 @@ const defaultColumn = {
     maxSize: 2000,
 };
 
-function useTable<TData>(
+// Table features shared by every table in the app. TanStack Table 9 types are
+// feature-aware, so column and row types refer to this set via TrguiTableFeatures.
+export const tableFeatureSet = tableFeatures({
+    rowSortingFeature,
+    rowExpandingFeature,
+    rowSelectionFeature,
+    columnSizingFeature,
+    columnResizingFeature,
+    columnOrderingFeature,
+    columnVisibilityFeature,
+    sortedRowModel: createSortedRowModel(),
+    expandedRowModel: createExpandedRowModel(),
+    sortFns,
+});
+export type TrguiTableFeatures = typeof tableFeatureSet;
+
+function useTable<TData extends RowData>(
     tablename: TableName,
-    columns: Array<ColumnDef<TData, unknown> | AccessorKeyColumnDef<TData>>,
+    columns: Array<ColumnDef<TrguiTableFeatures, TData, unknown> | AccessorKeyColumnDef<TrguiTableFeatures, TData>>,
     data: TData[],
     selected: string[],
     getRowId: (r: TData) => string,
     getSubRows?: (r: TData) => TData[],
-    onVisibilityChange?: React.Dispatch<VisibilityState>,
+    onVisibilityChange?: React.Dispatch<ColumnVisibilityState>,
 ): [
-    Table<TData>,
-    VisibilityState,
-    (v: VisibilityState) => void,
+    ReactTable<TrguiTableFeatures, TData>,
+    ColumnVisibilityState,
+    (v: ColumnVisibilityState) => void,
     ColumnOrderState,
     (o: ColumnOrderState) => void,
     ColumnSizingState,
@@ -67,7 +86,7 @@ function useTable<TData>(
     const config = useContext(ConfigContext);
 
     const [columnVisibility, setColumnVisibility] =
-        useState<VisibilityState>(config.getTableColumnVisibility(tablename));
+        useState<ColumnVisibilityState>(config.getTableColumnVisibility(tablename));
     const [columnOrder, setColumnOrder] =
         useState<ColumnOrderState>(config.getTableColumnOrder(tablename));
     const [columnSizing, setColumnSizing] =
@@ -95,7 +114,8 @@ function useTable<TData>(
         setRowSelection(Object.fromEntries(selected.map((id) => [id, true])));
     }, [selected]);
 
-    const table = useReactTable<TData>({
+    const table = useTanstackTable<TrguiTableFeatures, TData>({
+        features: tableFeatureSet,
         columns,
         data,
         defaultColumn,
@@ -118,9 +138,6 @@ function useTable<TData>(
             sorting,
             rowSelection,
         },
-        getCoreRowModel: getCoreRowModel(),
-        getExpandedRowModel: getExpandedRowModel(),
-        getSortedRowModel: getSortedRowModel(),
     });
 
     useEffect(() => {
@@ -132,7 +149,7 @@ function useTable<TData>(
 
         const newRowsWithSelectedDescendants = new Set<string>();
 
-        const recurse = (row: Row<TData>): boolean => {
+        const recurse = (row: Row<TrguiTableFeatures, TData>): boolean => {
             if (rowSelection[row.id]) return true;
 
             let hasSelectedDescendant = false;
@@ -163,8 +180,8 @@ interface HIDEvent {
     isRmb: boolean,
 }
 
-function useSelectHandler<TData>(
-    table: Table<TData>,
+function useSelectHandler<TData extends RowData>(
+    table: Table<TrguiTableFeatures, TData>,
     selectedReducer: TableSelectReducer,
     getRowId: (row: TData) => string,
     setCurrent?: (id: string) => void,
@@ -279,11 +296,11 @@ export function useStandardSelect(): [string[], TableSelectReducer] {
     return [selected, selectedReducer];
 }
 
-function InnerRow<TData>(props: {
-    row: Row<TData>,
+function InnerRow<TData extends RowData>(props: {
+    row: Row<TrguiTableFeatures, TData>,
     expanded: boolean | undefined,
     columnSizing: ColumnSizingState,
-    columnVisibility: VisibilityState,
+    columnVisibility: ColumnVisibilityState,
     columnOrder: ColumnOrderState,
 }) {
     return <>
@@ -313,8 +330,8 @@ export function useRowSelected() {
     return useContext(RowSelectedContext);
 }
 
-function TableRow<TData>(props: {
-    row: Row<TData>,
+function TableRow<TData extends RowData>(props: {
+    row: Row<TrguiTableFeatures, TData>,
     selected: boolean,
     descendantSelected: boolean,
     expanded: boolean,
@@ -325,7 +342,7 @@ function TableRow<TData>(props: {
     onRowDoubleClick?: (row: TData) => void,
     height: number,
     columnSizing: ColumnSizingState,
-    columnVisibility: VisibilityState,
+    columnVisibility: ColumnVisibilityState,
     columnOrder: ColumnOrderState,
 }) {
     const { onRowDoubleClick: propsDblClick, row } = props;
@@ -399,16 +416,16 @@ function TableRow<TData>(props: {
 
 const MemoizedTableRow = memo(TableRow) as typeof TableRow;
 
-function HeaderRow<TData>(
+function HeaderRow<TData extends RowData>(
     { headerGroup, height, resizerOffset, columnVisibility, setColumnVisibility, columnOrder, setColumnOrder, columns }: {
-        headerGroup: HeaderGroup<TData>,
+        headerGroup: HeaderGroup<TrguiTableFeatures, TData>,
         height: number,
         resizerOffset: number | null,
-        columnVisibility: VisibilityState,
-        setColumnVisibility: (v: VisibilityState) => void,
+        columnVisibility: ColumnVisibilityState,
+        setColumnVisibility: (v: ColumnVisibilityState) => void,
         columnOrder: ColumnOrderState,
         setColumnOrder: (s: ColumnOrderState) => void,
-        columns: Array<Column<TData, unknown>>,
+        columns: Array<Column<TrguiTableFeatures, TData, unknown>>,
     },
 ) {
     const [info, setInfo, handler] = useContextMenu();
@@ -485,7 +502,7 @@ function HeaderRow<TData>(
 
 const MemoizedHeaderRow = memo(HeaderRow) as typeof HeaderRow;
 
-function HeaderCell<TData>({ header, resizerOffset }: { header: Header<TData, unknown>, resizerOffset: number | null }) {
+function HeaderCell<TData extends RowData>({ header, resizerOffset }: { header: Header<TrguiTableFeatures, TData, unknown>, resizerOffset: number | null }) {
     return (
         <div
             className="th"
@@ -519,10 +536,10 @@ export interface TrguiTableRef {
     setExpanded: (state: boolean) => void,
 }
 
-export function TrguiTable<TData>(props: {
+export function TrguiTable<TData extends RowData>(props: {
     tablename: TableName,
     tableRef?: React.MutableRefObject<TrguiTableRef | undefined>,
-    columns: Array<ColumnDef<TData, unknown>>,
+    columns: Array<ColumnDef<TrguiTableFeatures, TData, unknown>>,
     data: TData[],
     selected: string[],
     getRowId: (r: TData) => string,
@@ -530,7 +547,7 @@ export function TrguiTable<TData>(props: {
     selectedReducer: TableSelectReducer,
     setCurrent?: (id: string) => void,
     onRowDoubleClick?: (row: TData) => void,
-    onVisibilityChange?: React.Dispatch<VisibilityState>,
+    onVisibilityChange?: React.Dispatch<ColumnVisibilityState>,
     scrollToRow?: { id: string },
 }) {
     const [table, columnVisibility, setColumnVisibility, columnOrder, setColumnOrder, columnSizing, sorting, rowsWithSelectedDescendants] =
@@ -579,7 +596,7 @@ export function TrguiTable<TData>(props: {
                         {...{
                             headerGroup,
                             height: rowHeight,
-                            resizerOffset: table.getState().columnSizingInfo.deltaOffset,
+                            resizerOffset: table.state.columnResizing.deltaOffset,
                             columnVisibility,
                             setColumnVisibility,
                             columnOrder,

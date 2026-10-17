@@ -109,7 +109,7 @@ function ServerContext(props: ServerContextProps) {
 
 interface ServerProps {
     hostname: string,
-    tabsRef: React.RefObject<ServerTabsRef>,
+    tabsRef: React.RefObject<ServerTabsRef | null>,
     toolbarExtra?: React.ReactNode,
     toggleTabStrip: () => void,
 }
@@ -141,7 +141,7 @@ export function Server({ hostname, tabsRef, toolbarExtra, toggleTabStrip }: Serv
 
     const {
         data: session,
-        isLoading: sessionIsLoading,
+        isPending: sessionIsLoading,
         isError: sessionIsError,
         error: sessionError,
     } = useSession(updates);

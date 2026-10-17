@@ -62,7 +62,7 @@ export const ToolbarButton = forwardRef<HTMLButtonElement, ToolbarButtonProps>(f
 
 interface ToolbarProps {
     setSearchTerms: (terms: string[]) => void,
-    modals: React.RefObject<ModalCallbacks>,
+    modals: React.RefObject<ModalCallbacks | null>,
     altSpeedMode: boolean,
     extra?: React.ReactNode,
     toggleFiltersPanel: () => void,

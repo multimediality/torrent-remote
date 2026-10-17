@@ -129,7 +129,7 @@ export const ServerTabs = React.forwardRef<ServerTabsRef, ServerTabsProps>(funct
         switchTab,
     }));
 
-    const onServersChange = useRef<(s: ServerConfig[]) => void>();
+    const onServersChange = useRef<((s: ServerConfig[]) => void) | undefined>(undefined);
     onServersChange.current = useCallback((servers: ServerConfig[]) => {
         const newOpenTabs: string[] = [];
         let newCurrentTab = 0;

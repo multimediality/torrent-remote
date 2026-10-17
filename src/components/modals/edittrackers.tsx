@@ -45,7 +45,7 @@ export function EditTrackers(props: ModalState) {
         return serverData.current;
     }, [selected, serverData]);
 
-    const { data: torrent, isLoading } = useTorrentDetails(
+    const { data: torrent, isPending } = useTorrentDetails(
         torrentId ?? -1, torrentId !== undefined && props.opened, false, true);
 
     const form = useForm<FormValues>({});
@@ -125,7 +125,7 @@ export function EditTrackers(props: ModalState) {
                 title="Edit torrent trackers"
                 mih="25rem"
             >
-                <LoadingOverlay visible={isLoading} />
+                <LoadingOverlay visible={isPending} />
                 <Grid align="center">
                     <Grid.Col>
                         <TorrentsNames />

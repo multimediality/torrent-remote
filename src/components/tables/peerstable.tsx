@@ -21,6 +21,7 @@ import type { AccessorFn, CellContext, ColumnDef } from "@tanstack/react-table";
 import React, { useMemo, useContext } from "react";
 import type { Torrent, PeerStats } from "rpc/torrent";
 import { bytesToHumanReadableStr } from "trutil";
+import type { TrguiTableFeatures } from "./common";
 import { TrguiTable, useStandardSelect } from "./common";
 import { ProgressBar } from "components/progressbar";
 import { Flex } from "@mantine/core";
@@ -88,15 +89,15 @@ function PercentField(props: TableFieldProps) {
     />;
 }
 
-const Columns = AllFields.map((field): ColumnDef<PeerStats> => {
-    const cell = (props: CellContext<PeerStats, unknown>) => {
+const Columns = AllFields.map((field): ColumnDef<TrguiTableFeatures, PeerStats> => {
+    const cell = (props: CellContext<TrguiTableFeatures, PeerStats, unknown>) => {
         if (field.component !== undefined) {
             return <field.component entry={props.row.original} fieldName={field.name} />;
         } else {
             return <div>{props.getValue() as string}</div>;
         }
     };
-    const column: ColumnDef<PeerStats> = {
+    const column: ColumnDef<TrguiTableFeatures, PeerStats> = {
         header: field.label,
         accessorKey: field.name,
         id: field.columnId,

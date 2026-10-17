@@ -27,7 +27,7 @@ import { bytesToHumanReadableStr, fileSystemSafeName, pathMapFromServer } from "
 import type { ProgressBarVariant } from "../progressbar";
 import { ProgressBar } from "../progressbar";
 import * as Icon from "react-bootstrap-icons";
-import type { TrguiTableRef } from "./common";
+import type { TrguiTableFeatures, TrguiTableRef } from "./common";
 import { EditableNameField, TrguiTable } from "./common";
 import { ActionIcon, Badge, Box, Checkbox, Flex, Loader, Menu, Text, TextInput, useComputedColorScheme } from "@mantine/core";
 import { refreshFileTree, useMutateTorrent, useMutateTorrentPath } from "queries";
@@ -47,7 +47,7 @@ type EntryWantedChangeHandler = (entryPath: string, state: boolean) => void;
 interface TableFieldProps {
     fileTree: CachedFileTree,
     entry: FileDirEntryView,
-    row: Row<FileDirEntryView>,
+    row: Row<TrguiTableFeatures, FileDirEntryView>,
     fieldName: FileDirEntryKey,
     treeName: string,
     onCheckboxChange: EntryWantedChangeHandler,
@@ -308,15 +308,15 @@ export function FileTreeTable(props: FileTreeTableProps) {
     const onCheckboxChange = props.onCheckboxChange;
 
     const nameSortFunc = useCallback(
-        (rowa: Row<FileDirEntryView>, rowb: Row<FileDirEntryView>) => {
+        (rowa: Row<TrguiTableFeatures, FileDirEntryView>, rowb: Row<TrguiTableFeatures, FileDirEntryView>) => {
             const [a, b] = [rowa.original, rowb.original];
             return a.fullpath < b.fullpath ? -1 : 1;
         }, []);
 
     const columns = useMemo(() => AllFields
         .filter((field) => field.briefField === true || props.brief !== true)
-        .map((field): ColumnDef<FileDirEntryView> => {
-            const cell = (cellProps: CellContext<FileDirEntryView, unknown>) => {
+        .map((field): ColumnDef<TrguiTableFeatures, FileDirEntryView> => {
+            const cell = (cellProps: CellContext<TrguiTableFeatures, FileDirEntryView, unknown>) => {
                 return <field.component
                     fileTree={props.fileTree}
                     fieldName={field.name}
@@ -326,12 +326,12 @@ export function FileTreeTable(props: FileTreeTableProps) {
                     onCheckboxChange={onCheckboxChange}
                 />;
             };
-            const column: ColumnDef<FileDirEntryView> = {
+            const column: ColumnDef<TrguiTableFeatures, FileDirEntryView> = {
                 header: field.label,
                 accessorKey: field.name,
                 cell,
             };
-            if (field.name === "name") column.sortingFn = nameSortFunc;
+            if (field.name === "name") column.sortFn = nameSortFunc;
             return column;
         }), [props.brief, props.fileTree, nameSortFunc, onCheckboxChange]);
 
@@ -364,7 +364,7 @@ export function FileTreeTable(props: FileTreeTableProps) {
 
     const [info, setInfo, handler] = useContextMenu();
 
-    const tableRef = useRef<TrguiTableRef>();
+    const tableRef = useRef<TrguiTableRef | undefined>(undefined);
 
     const [searchTerms, setSearchTerms] = useState<string[]>([]);
 

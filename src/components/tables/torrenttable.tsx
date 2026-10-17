@@ -23,11 +23,11 @@ import type { Torrent } from "rpc/torrent";
 import { useServerTorrentData, useServerRpcVersion, useServerSelectedTorrents } from "rpc/torrent";
 import type { TorrentAllFieldsType, TorrentFieldsType } from "rpc/transmission";
 import { PriorityColors, PriorityStrings, Status, StatusStrings, TorrentMinimumFields } from "rpc/transmission";
-import type { ColumnDef, VisibilityState } from "@tanstack/react-table";
+import type { ColumnDef, ColumnVisibilityState } from "@tanstack/react-table";
 import { bytesToHumanReadableStr, fileSystemSafeName, modKeyString, pathMapFromServer, secondsToHumanReadableStr, timestampToDateString, torrentProgressbarStyle } from "trutil";
 import { ProgressBar } from "../progressbar";
 import type { AccessorFn, CellContext } from "@tanstack/table-core";
-import type { TableSelectReducer } from "./common";
+import type { TableSelectReducer, TrguiTableFeatures } from "./common";
 import { EditableNameField, TrguiTable } from "./common";
 import { Badge, Box, Kbd, Menu, Text, useMantineTheme } from "@mantine/core";
 import { ConfigContext, ServerConfigContext } from "config";
@@ -410,8 +410,8 @@ function PercentBarField(props: TableFieldProps) {
     />;
 }
 
-const Columns = AllFields.map((f): ColumnDef<Torrent> => {
-    const cell = (props: CellContext<Torrent, unknown>) => {
+const Columns = AllFields.map((f): ColumnDef<TrguiTableFeatures, Torrent> => {
+    const cell = (props: CellContext<TrguiTableFeatures, Torrent, unknown>) => {
         return <f.component fieldName={f.name} torrent={props.row.original} />;
     };
     if (isTableFieldWithAccessor(f)) {
@@ -436,7 +436,7 @@ const ColumnRequiredFields = AllFields.map(
     }),
 );
 
-function getRequiredFields(visibilityState: VisibilityState): TorrentFieldsType[] {
+function getRequiredFields(visibilityState: ColumnVisibilityState): TorrentFieldsType[] {
     const set = ColumnRequiredFields.reduce(
         (set: Set<TorrentFieldsType>, f) => {
             if (!(f.id in visibilityState) || visibilityState[f.id]) {
@@ -462,7 +462,7 @@ export function useInitialTorrentRequiredFields() {
 }
 
 export function TorrentTable(props: {
-    modals: React.RefObject<ModalCallbacks>,
+    modals: React.RefObject<ModalCallbacks | null>,
     torrents: Torrent[],
     setCurrentTorrent: (id: string) => void,
     selectedTorrents: Set<number>,
@@ -476,7 +476,7 @@ export function TorrentTable(props: {
 
     const { onColumnVisibilityChange } = props;
     const onVisibilityChange = useCallback(
-        (visibility: VisibilityState) => { onColumnVisibilityChange(getRequiredFields(visibility)); },
+        (visibility: ColumnVisibilityState) => { onColumnVisibilityChange(getRequiredFields(visibility)); },
         [onColumnVisibilityChange],
     );
 
@@ -534,7 +534,7 @@ export function TorrentTable(props: {
 function TorrentContextMenu(props: {
     contextMenuInfo: ContextMenuInfo,
     setContextMenuInfo: (i: ContextMenuInfo) => void,
-    modals: React.RefObject<ModalCallbacks>,
+    modals: React.RefObject<ModalCallbacks | null>,
     onRowDoubleClick: (t: Torrent, reveal: boolean) => void,
 }) {
     const serverData = useServerTorrentData();

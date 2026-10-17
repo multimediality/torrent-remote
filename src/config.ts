@@ -19,7 +19,7 @@
 
 import React from "react";
 import type {
-    SortingState, ColumnSizingState, VisibilityState, ColumnOrderState,
+    SortingState, ColumnSizingState, ColumnVisibilityState, ColumnOrderState,
 } from "@tanstack/react-table";
 import type { MantineColorScheme, DefaultMantineColor } from "@mantine/core";
 import type { PriorityNumberType } from "rpc/transmission";
@@ -195,7 +195,7 @@ interface Settings {
     configVersion: number,
 }
 
-const DefaultColumnVisibility: Partial<Record<TableName, VisibilityState>> = {
+const DefaultColumnVisibility: Partial<Record<TableName, ColumnVisibilityState>> = {
     torrents: {
         sizeWhenDone: false,
         leftUntilDone: false,
@@ -447,11 +447,11 @@ export class Config {
         return this.values.interface.tables[table].columnSizes;
     }
 
-    setTableColumnVisibility(table: TableName, visibility: VisibilityState) {
+    setTableColumnVisibility(table: TableName, visibility: ColumnVisibilityState) {
         this.values.interface.tables[table].columnVisibility = visibility;
     }
 
-    getTableColumnVisibility(table: TableName): VisibilityState {
+    getTableColumnVisibility(table: TableName): ColumnVisibilityState {
         return this.values.interface.tables[table].columnVisibility;
     }
 

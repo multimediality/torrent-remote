@@ -244,7 +244,7 @@ function IntegrationsPanel({ form }: { form: UseFormReturnType<FormValues> }) {
     }, []);
 
     return (
-        <Grid align="center" gutter="md">
+        <Grid align="center" gap="md">
             <Grid.Col span={6}>Delete successfully added torrent files</Grid.Col>
             <Grid.Col span={2}>
                 <Switch

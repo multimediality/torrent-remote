@@ -448,7 +448,7 @@ function Details(props: DetailsProps) {
     const peersTableVisibility = config.getTableColumnVisibility("peers");
     const countryVisible = peersTableVisibility.country ?? true;
 
-    const { data: fetchedTorrent, isLoading } = useTorrentDetails(
+    const { data: fetchedTorrent, isPending } = useTorrentDetails(
         props.torrentId ?? -1, props.torrentId !== undefined && props.updates, countryVisible);
 
     const [torrent, setTorrent] = useState<Torrent>();
@@ -539,7 +539,7 @@ function Details(props: DetailsProps) {
             </Tabs.List>
             <div style={{ flexGrow: 1, position: "relative" }}>
                 <LoadingOverlay
-                    visible={props.torrentId !== undefined && isLoading}
+                    visible={props.torrentId !== undefined && isPending}
                     zIndex={400}
                     transitionProps={{ duration: 500 }}
                     loaderProps={{ size: "xl" }}

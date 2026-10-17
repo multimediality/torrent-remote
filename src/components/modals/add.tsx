@@ -101,7 +101,7 @@ function AddCommon(props: AddCommonProps) {
 interface AddCommonModalProps extends ModalState {
     serverName: string,
     uri: string | File | undefined,
-    tabsRef: React.RefObject<ServerTabsRef>,
+    tabsRef: React.RefObject<ServerTabsRef | null>,
 }
 
 function useCommonProps(opened: boolean) {
@@ -152,7 +152,7 @@ function useCommonProps(opened: boolean) {
     }), [config, props, start, priority, sequential]);
 }
 
-function TabSwitchDropdown({ tabsRef }: { tabsRef: React.RefObject<ServerTabsRef> }) {
+function TabSwitchDropdown({ tabsRef }: { tabsRef: React.RefObject<ServerTabsRef | null> }) {
     const serverConfig = useContext(ServerConfigContext);
 
     const [value, setValue] = useState(serverConfig.name);
@@ -508,7 +508,7 @@ function useTauriReadFile(
 
 function useWebappReadFile(
     props: AddCommonModalProps,
-    filesInputRef: React.RefObject<HTMLInputElement>,
+    filesInputRef: React.RefObject<HTMLInputElement | null>,
     close: () => void,
     setTorrentData: React.Dispatch<React.SetStateAction<TorrentFileData[] | undefined>>,
 ) {
@@ -546,7 +546,7 @@ function useWebappReadFile(
 }
 
 function useFilesInput(
-    filesInputRef: React.RefObject<HTMLInputElement>,
+    filesInputRef: React.RefObject<HTMLInputElement | null>,
     close: () => void,
     setTorrentData: React.Dispatch<TorrentFileData[] | undefined>,
 ) {

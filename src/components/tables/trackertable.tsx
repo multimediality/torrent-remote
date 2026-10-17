@@ -23,6 +23,7 @@ import type { Torrent, TrackerStats } from "rpc/torrent";
 import { getTrackerAnnounceState } from "rpc/torrent";
 import type { TrackerStatsFieldsType } from "rpc/transmission";
 import { secondsToHumanReadableStr } from "trutil";
+import type { TrguiTableFeatures } from "./common";
 import { TrguiTable, useStandardSelect } from "./common";
 
 interface TableFieldProps {
@@ -47,8 +48,8 @@ const AllFields: readonly TableField[] = [
     { name: "downloadCount", label: "Downloads", component: NumberField },
 ] as const;
 
-const Columns = AllFields.map((field): ColumnDef<TrackerStats> => {
-    const cell = (props: CellContext<TrackerStats, unknown>) => {
+const Columns = AllFields.map((field): ColumnDef<TrguiTableFeatures, TrackerStats> => {
+    const cell = (props: CellContext<TrguiTableFeatures, TrackerStats, unknown>) => {
         if (field.component !== undefined) {
             return <field.component entry={props.row.original} fieldName={field.name} />;
         } else {

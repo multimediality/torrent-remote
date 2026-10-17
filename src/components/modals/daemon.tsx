@@ -24,7 +24,7 @@ import { ConfigContext, ServerConfigContext } from "config";
 import React, { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import type { ModalState } from "./common";
 import { SaveCancelModal } from "./common";
-import { queryClient, useMutateSession, useSessionFull, useTestPort, useUpdateBlocklist } from "queries";
+import { queryClient, useMutateSession, useRemoveTestPortQuery, useSessionFull, useTestPort, useUpdateBlocklist } from "queries";
 import type { UseFormReturnType } from "@mantine/form";
 import { useForm } from "@mantine/form";
 import type { SessionInfo } from "rpc/client";
@@ -212,7 +212,8 @@ function NetworkPanel(
     const [testPortQueryEnbaled, setTestPortQueryEnabled] = useState(false);
     const [testPortResult, setTestPortResult] = useState<PortTestResult>({ label: "", color: "green" });
 
-    const { data: testPort, status, fetchStatus, remove: removeQuery } = useTestPort(testPortQueryEnbaled);
+    const { data: testPort, status, fetchStatus } = useTestPort(testPortQueryEnbaled);
+    const removeQuery = useRemoveTestPortQuery();
 
     const onTestPort = useCallback(() => {
         setTestPortQueryEnabled(true);
@@ -232,7 +233,7 @@ function NetworkPanel(
                     label: "Port unreachable",
                     color: "red",
                 });
-        } else if (status === "loading") {
+        } else if (status === "pending") {
             setTestPortResult({
                 label: "",
                 color: "green",
@@ -255,7 +256,7 @@ function NetworkPanel(
         }
     }, [opened, setTestPortResult, removeQuery]);
 
-    const { mutate: updateBlocklist, isLoading: updatePending } = useUpdateBlocklist();
+    const { mutate: updateBlocklist, isPending: updatePending } = useUpdateBlocklist();
     const onUpdateBlocklist = useCallback(() => {
         updateBlocklist(undefined, {
             onError: (e) => {
@@ -299,7 +300,7 @@ function NetworkPanel(
             <Grid.Col span={3}>
                 {fetchStatus === "fetching"
                     ? <Loader key="pt" size="1.5rem" />
-                    : <Text key="pt" color={testPortResult.color}>{testPortResult.label}</Text>}
+                    : <Text key="pt" c={testPortResult.color}>{testPortResult.label}</Text>}
             </Grid.Col>
             <Grid.Col>
                 <Checkbox
@@ -719,7 +720,7 @@ export function DaemonSettingsModal(props: ModalState) {
             size="lg"
             onClose={props.close}
             onSave={onSave}
-            saveLoading={mutation.isLoading}
+            saveLoading={mutation.isPending}
             centered
             title="Server Settings"
         >

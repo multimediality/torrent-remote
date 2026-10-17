@@ -93,7 +93,7 @@ export function App(props: React.PropsWithChildren) {
         <QueryClientProvider client={queryClient}>
             <Notifications limit={5} />
             {props.children}
-            <ReactQueryDevtools toggleButtonProps={{ style: { marginBottom: "2rem" } }} />
+            <ReactQueryDevtools />
         </QueryClientProvider>
     );
 }

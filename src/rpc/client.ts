@@ -28,7 +28,7 @@ import type { Batcher } from "@yornaath/batshit";
 import { create, keyResolver } from "@yornaath/batshit";
 import { mergeTrackerLists } from "trutil";
 
-const RUST_BACKEND = "http://127.0.0.1:44321";
+const RUST_BACKEND = "http://127.0.0.1:44327";
 
 class ApiError extends Error { }
 

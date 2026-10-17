@@ -38,7 +38,10 @@ use tokio::sync::{oneshot, OwnedSemaphorePermit, Semaphore};
 use crate::torrentcache::process_response;
 use crate::tray::toggle_main_window;
 
-const ADDRESS: &str = "127.0.0.1:44321";
+// Also the single-instance lock: a second launch finds the port taken,
+// forwards its arguments here and exits. Deliberately differs from the
+// port TrguiNG uses so both apps can run side by side.
+const ADDRESS: &str = "127.0.0.1:44327";
 const ALLOW_ORIGINS: &[&str] = if cfg!(feature = "custom-protocol") {
     &["tauri://localhost", "http://tauri.localhost"]
 } else {

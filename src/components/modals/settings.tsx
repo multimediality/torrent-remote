@@ -312,12 +312,14 @@ function IntegrationsPanel({ form }: { form: Form }) {
                 />
             </div>
             <div className="col-span-6">Show notifications for completed torrents</div>
-            <div className="col-span-6 flex flex-wrap items-center gap-x-3 gap-y-1">
+            <div className="col-span-6">
                 <BigSwitch
                     checked={app.toastNotifications}
                     onChange={(v) => { form.setValue("app.toastNotifications", v); }}
                 />
-                <span>Play sound</span>
+            </div>
+            <div className="col-span-6">Play sound for completed torrents</div>
+            <div className="col-span-6">
                 <BigSwitch
                     checked={app.toastNotificationSound}
                     onChange={(v) => { form.setValue("app.toastNotificationSound", v); }}
@@ -337,8 +339,8 @@ function IntegrationsPanel({ form }: { form: Form }) {
                     <Button onClick={associateMagnet}>magnet links</Button>
                 </div>
             </>}
-            <div className="col-span-6">Show tray icon</div>
-            <div className="col-span-6 flex flex-wrap items-center gap-x-3 gap-y-1">
+            <div className="col-span-6">Show tray icon (takes effect after restart)</div>
+            <div className="col-span-6">
                 <BigSwitch
                     checked={app.showTrayIcon}
                     onChange={(checked) => {
@@ -349,7 +351,6 @@ function IntegrationsPanel({ form }: { form: Form }) {
                         }
                     }}
                 />
-                <span>(takes effect after restart)</span>
             </div>
             <div className="col-span-6">When minimized</div>
             <div className="col-span-6">

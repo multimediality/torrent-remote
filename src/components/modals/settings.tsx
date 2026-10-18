@@ -270,7 +270,7 @@ function BigSwitch({ checked, onChange }: { checked: boolean, onChange: (checked
             offLabel="OFF"
             checked={checked}
             onCheckedChange={onChange}
-            className="w-full min-w-16"
+            className="w-28"
         />
     );
 }

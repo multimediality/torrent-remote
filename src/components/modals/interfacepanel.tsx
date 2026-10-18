@@ -249,7 +249,6 @@ export function InterfaceSettigsPanel({ form }: { form: UseFormReturn<InterfaceF
                     <div className="col-span-12">
                         <TextareaField
                             minRows={6}
-                            maxRows={6}
                             label="Preconfigured directories (one per line)"
                             value={values.preconfiguredDirs.join("\n")}
                             onChange={(e) => {

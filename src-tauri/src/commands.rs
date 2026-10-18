@@ -21,6 +21,7 @@ use base64::{engine::general_purpose::STANDARD as b64engine, Engine as _};
 use font_loader::system_fonts;
 use lava_torrent::torrent::v1::Torrent;
 use tauri::{Emitter, EventTarget, State};
+use tauri_plugin_opener::OpenerExt;
 
 use crate::{
     createtorrent::{CreateCheckResult, CreationRequestsHandle, TorrentCreateInfo},
@@ -127,24 +128,33 @@ pub async fn remove_file(path: String) {
     }
 }
 
+/// Opens a downloaded file or directory with its default application, or
+/// reveals it in the file manager. Goes through tauri-plugin-opener on the
+/// Rust side: the paths come from the server's download directory after
+/// path mapping, so there is no sensible scope to grant the webview directly.
 #[tauri::command]
-pub async fn shell_open(path: String, reveal: bool) -> Result<(), String> {
+pub async fn shell_open(app: tauri::AppHandle, path: String, reveal: bool) -> Result<(), String> {
     #[cfg(target_os = "windows")]
     let path = path.replace('/', "\\");
 
+    let opener = app.opener();
     if reveal {
-        if let Err(err) = opener::reveal(path.clone()) {
+        if let Err(err) = opener.reveal_item_in_dir(&path) {
             // if reveal action failed it's possible file is not yet created or is
             // partially downloaded and has .part suffix, so try again to just
             // open the parent folder
             let path = std::path::Path::new(&path);
-            if let Some(path) = path.parent() {
-                return opener::open(path).map_err(|e| e.to_string());
+            if let Some(parent) = path.parent() {
+                return opener
+                    .open_path(parent.to_string_lossy(), None::<&str>)
+                    .map_err(|e| e.to_string());
             }
             return Err(err.to_string());
         }
     } else {
-        opener::open(path).map_err(|e| e.to_string())?
+        opener
+            .open_path(path, None::<&str>)
+            .map_err(|e| e.to_string())?
     }
     Ok(())
 }

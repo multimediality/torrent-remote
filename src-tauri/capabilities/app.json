@@ -34,7 +34,6 @@
     "core:window:allow-set-size",
     "core:window:allow-set-position",
     "core:window:allow-set-focus",
-    "shell:allow-open",
     "dialog:allow-open",
     "dialog:allow-save",
     "dialog:allow-message",
@@ -44,7 +43,6 @@
     "clipboard-manager:default",
     "fs:default",
     "dialog:default",
-    "shell:default",
     "notification:default",
     "cli:default"
   ]

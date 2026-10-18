@@ -28,14 +28,13 @@ tokio = { version = "^1.53", features = ["net", "macros", "time"] }
 serde = { version = "^1.0", features = ["derive"] }
 tauri = { version = "2.12.4", features = [ "devtools", "tray-icon"] }
 tauri-utils = "2.10.2"
-opener = { version = "0.9", features = ["reveal"], default-features = false }
 rodio = { version = "^0.23", features = ["playback", "mp3"], default-features = false }
 maxminddb = "^0.32"
 font-loader = "0.11.0"
 tauri-plugin-clipboard-manager = "2.5.0"
 tauri-plugin-fs = "2"
 tauri-plugin-dialog = "2"
-tauri-plugin-shell = "2"
+tauri-plugin-opener = "2"
 tauri-plugin-notification = "2"
 tauri-plugin-window-state = "2"
 tauri-plugin-single-instance = "2"

@@ -169,19 +169,21 @@ export default function TauriApp() {
                     setCurrentServer={setCurrentServer}
                     visible={showTabStrip}
                 >
-                    <ShowVersion btn="lg" />
-                    <ColorSchemeToggle btn="lg" />
-                    <FontSizeToggle />
-                    <CreateTorrentButton />
-                    <Button
-                        size="icon-lg"
-                        variant="outline"
-                        className="my-auto"
-                        title="Configure servers"
-                        onClick={serverConfigHandlers.open}
-                    >
-                        <Icon.GearFill size="1.1rem" />
-                    </Button>
+                    <div className="my-auto ml-auto flex items-center gap-2">
+                        <CreateTorrentButton />
+                        <ColorSchemeToggle btn="lg" />
+                        <FontSizeToggle />
+                        <Button
+                            size="icon-lg"
+                            variant="outline"
+                            className="my-auto"
+                            title="Configure servers"
+                            onClick={serverConfigHandlers.open}
+                        >
+                            <Icon.GearFill size="1.1rem" />
+                        </Button>
+                        <ShowVersion btn="lg" />
+                    </div>
                 </ServerTabs>
                 {currentServer !== undefined
                     ? <ServerConfigContext.Provider value={currentServer}>

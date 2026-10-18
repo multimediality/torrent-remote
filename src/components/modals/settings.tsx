@@ -305,42 +305,40 @@ function IntegrationsPanel({ form }: { form: Form }) {
     return (
         <div className="grid max-w-[48rem] grid-cols-12 items-center gap-2">
             <div className="col-span-6">Delete successfully added torrent files</div>
-            <div className="col-span-2">
+            <div className="col-span-6">
                 <BigSwitch
                     checked={app.deleteAdded}
                     onChange={(v) => { form.setValue("app.deleteAdded", v); }}
                 />
             </div>
-            <div className="col-span-4"></div>
             <div className="col-span-6">Show notifications for completed torrents</div>
-            <div className="col-span-2">
+            <div className="col-span-6 flex flex-wrap items-center gap-x-3 gap-y-1">
                 <BigSwitch
                     checked={app.toastNotifications}
                     onChange={(v) => { form.setValue("app.toastNotifications", v); }}
                 />
-            </div>
-            <div className="col-span-2">Play sound</div>
-            <div className="col-span-2">
+                <span>Play sound</span>
                 <BigSwitch
                     checked={app.toastNotificationSound}
                     onChange={(v) => { form.setValue("app.toastNotificationSound", v); }}
                 />
             </div>
             <div className="col-span-6">Launch on startup</div>
-            <div className="col-span-2">
+            <div className="col-span-6">
                 <BigSwitch
                     checked={autostart}
                     onChange={onChangeAutostart}
                 />
             </div>
-            <div className="col-span-4"></div>
             {platform === "Windows" && <>
                 <div className="col-span-6">Associate application</div>
-                <div className="col-span-3"><Button onClick={associateTorrent}>.torrent files</Button></div>
-                <div className="col-span-3"><Button onClick={associateMagnet}>magnet links</Button></div>
+                <div className="col-span-6 flex flex-wrap gap-2">
+                    <Button onClick={associateTorrent}>.torrent files</Button>
+                    <Button onClick={associateMagnet}>magnet links</Button>
+                </div>
             </>}
             <div className="col-span-6">Show tray icon</div>
-            <div className="col-span-2">
+            <div className="col-span-6 flex flex-wrap items-center gap-x-3 gap-y-1">
                 <BigSwitch
                     checked={app.showTrayIcon}
                     onChange={(checked) => {
@@ -351,8 +349,8 @@ function IntegrationsPanel({ form }: { form: Form }) {
                         }
                     }}
                 />
+                <span>(takes effect after restart)</span>
             </div>
-            <div className="col-span-4">(takes effect after restart)</div>
             <div className="col-span-6">When minimized</div>
             <div className="col-span-6">
                 <SegmentedControl

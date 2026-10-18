@@ -40,6 +40,11 @@ jobs:
             rust_target: aarch64-pc-windows-msvc
 
     runs-on: ${{ matrix.platform.os }}
+    env:
+      # Authenticode signing through Azure Artifact Signing (README, "Code
+      # signing"); forks and runs without the Azure secrets build unsigned.
+      SIGN_WINDOWS: ${{ matrix.platform.os == 'windows-latest' && secrets.AZURE_CLIENT_ID != '' }}
+      SIGNING_CLI_VERSION: 0.11.0
     steps:
       - name: Disable crlf
         if: matrix.platform.os == 'windows-latest'
@@ -87,8 +92,33 @@ jobs:
         shell: bash
         run: python3 ci/set_version.py "${GITHUB_REF_NAME#v}"
 
+      # signCommand in tauri.signed.conf.json runs artifact-signing-cli, which
+      # logs in with the runner's Azure CLI and signs through the runner's
+      # signtool (Windows SDK 10.0.26100). Built once, then cached by version.
+      - name: Cache artifact-signing-cli
+        if: env.SIGN_WINDOWS == 'true'
+        id: signing_cli_cache
+        uses: actions/cache@v6
+        with:
+          path: ~/artifact-signing-cli
+          key: artifact-signing-cli-${{ env.SIGNING_CLI_VERSION }}-${{ runner.os }}
+
+      - name: Install artifact-signing-cli
+        if: env.SIGN_WINDOWS == 'true'
+        shell: pwsh
+        run: |
+          $root = "$HOME\artifact-signing-cli"
+          if ('${{ steps.signing_cli_cache.outputs.cache-hit }}' -ne 'true') {
+            cargo install artifact-signing-cli --version $env:SIGNING_CLI_VERSION --locked --root $root
+            if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          }
+          "$root\bin" >> $env:GITHUB_PATH
+
       # MSI accepts only numeric pre-release identifiers and RPM none at all,
       # so pre-release tags skip both; the updater uses NSIS and AppImage.
+      # Windows builds add the signing overlay when the Azure secrets are set;
+      # Tauri then signs the app exe, the NSIS installer, uninstaller and
+      # plugins, and the MSI.
       - uses: tauri-apps/tauri-action@v0.6.2
         id: tauri_build
         env:
@@ -96,10 +126,14 @@ jobs:
           # minisign key for the in-app updater (bundle.createUpdaterArtifacts)
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          # service principal for Artifact Signing, read by artifact-signing-cli
+          AZURE_TENANT_ID: ${{ env.SIGN_WINDOWS == 'true' && secrets.AZURE_TENANT_ID || '' }}
+          AZURE_CLIENT_ID: ${{ env.SIGN_WINDOWS == 'true' && secrets.AZURE_CLIENT_ID || '' }}
+          AZURE_CLIENT_SECRET: ${{ env.SIGN_WINDOWS == 'true' && secrets.AZURE_CLIENT_SECRET || '' }}
           # shown in the About dialog; git describe would say "dirty" after the version step
           TORRENT_REMOTE_VERSION: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || '' }}
         with:
-          args: --target ${{ matrix.platform.rust_target }} ${{ contains(github.ref_name, '-') && '--config {"bundle":{"targets":["app","appimage","deb","nsis"]}}' || '' }}
+          args: --target ${{ matrix.platform.rust_target }} ${{ contains(github.ref_name, '-') && '--config {"bundle":{"targets":["app","appimage","deb","nsis"]}}' || '' }} ${{ env.SIGN_WINDOWS == 'true' && '--config src-tauri/tauri.signed.conf.json' || '' }}
 
       - name: Git status and version
         run: |

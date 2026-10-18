@@ -1,0 +1,20 @@
+{
+  "bundle": {
+    "windows": {
+      "signCommand": {
+        "cmd": "artifact-signing-cli",
+        "args": [
+          "-e",
+          "https://eus.codesigning.azure.net",
+          "-a",
+          "scdemanett-signing",
+          "-c",
+          "scdemanett-public-trust",
+          "-d",
+          "Torrent Remote",
+          "%1"
+        ]
+      }
+    }
+  }
+}

@@ -91,6 +91,17 @@ For a local release build, load both into the shell first:
 npm run build
 ```
 
+### Code signing
+
+Windows builds are Authenticode-signed through Azure Artifact Signing (account `scdemanett-signing`,
+certificate profile `scdemanett-public-trust`). The overlay `src-tauri/tauri.signed.conf.json`
+sets `bundle.windows.signCommand` to run
+[artifact-signing-cli](https://github.com/Levminer/artifact-signing-cli) with those literal values,
+and Tauri runs it on the app exe, the NSIS installer and uninstaller, and the MSI. The workflow
+installs the CLI and adds the overlay only when the repository secrets `AZURE_TENANT_ID`,
+`AZURE_CLIENT_ID` and `AZURE_CLIENT_SECRET` (an Entra app registration with the Artifact Signing
+Certificate Profile Signer role on the account) are set, so forks still build unsigned.
+
 ## How to use Torrent Remote as a web interface
 
 Transmission supports custom web interfaces, all you have to do is run the daemon with

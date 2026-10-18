@@ -266,7 +266,7 @@ export default function CreateTorrentForm() {
                 spellCheck="false"
             />
             <Label>Piece size</Label>
-            <div className="px-4 pt-8 pb-2">
+            <div className="px-4 pt-10 pb-2">
                 <Slider
                     step={1}
                     min={14}

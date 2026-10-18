@@ -42,7 +42,7 @@ function Slider({
             </SliderPrimitive.Track>
             {label !== undefined && (
                 <div
-                    className="pointer-events-none absolute -top-7 -translate-x-1/2 rounded-sm bg-foreground px-1.5 py-0.5 text-xs whitespace-nowrap text-background"
+                    className="pointer-events-none absolute -top-9 -translate-x-1/2 rounded-sm bg-foreground px-2 py-1 text-sm font-medium whitespace-nowrap text-background"
                     style={{ left: `calc(${percent}% + ${(50 - percent) * 0.16}px)` }}
                 >
                     {label(value)}
@@ -50,7 +50,7 @@ function Slider({
             )}
             <SliderPrimitive.Thumb
                 data-slot="slider-thumb"
-                className="block size-4 shrink-0 rounded-full border-2 border-primary bg-white shadow-sm transition-[box-shadow] hover:ring-4 hover:ring-ring/30 focus-visible:ring-4 focus-visible:ring-ring/40 focus-visible:outline-hidden disabled:pointer-events-none"
+                className="block size-5 shrink-0 rounded-full border-2 border-primary bg-white shadow-sm transition-[box-shadow] hover:ring-4 hover:ring-ring/30 focus-visible:ring-4 focus-visible:ring-ring/40 focus-visible:outline-hidden disabled:pointer-events-none"
             />
         </SliderPrimitive.Root>
     );

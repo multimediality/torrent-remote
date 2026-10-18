@@ -135,8 +135,8 @@ export function InterfaceSettigsPanel({ form }: { form: UseFormReturn<InterfaceF
     const ignoredTrackerPrefixesError = form.getFieldState("interface.ignoredTrackerPrefixes", form.formState).error?.message;
 
     return (
-        <Tabs defaultValue="appearance" orientation="vertical" className="min-h-[29rem]">
-            <TabsList>
+        <Tabs defaultValue="appearance" orientation="vertical" className="min-h-[29rem] grow">
+            <TabsList className="min-w-[11rem]">
                 <TabsTrigger value="appearance" className="px-4 py-2.5">Appearance</TabsTrigger>
                 <TabsTrigger value="downloads" className="px-4 py-2.5">Downloads</TabsTrigger>
                 <TabsTrigger value="miscellaneous" className="px-4 py-2.5">Miscellaneous</TabsTrigger>
@@ -273,7 +273,7 @@ export function InterfaceSettigsPanel({ form }: { form: UseFormReturn<InterfaceF
                     </div>
                 </Grid>
             </TabsContent>
-            <TabsContent value="miscellaneous" className="p-3">
+            <TabsContent value="miscellaneous" className="flex flex-col p-3">
                 <Grid>
                     <div className="col-span-8">
                         Remove torrent dialog delete data option
@@ -302,18 +302,19 @@ export function InterfaceSettigsPanel({ form }: { form: UseFormReturn<InterfaceF
                             error={ignoredTrackerPrefixesError}
                         />
                     </div>
-                    <div className="col-span-12">
-                        <TextareaField
-                            minRows={10}
-                            maxRows={10}
-                            label="Default tracker list"
-                            value={values.defaultTrackers.join("\n")}
-                            onChange={(e) => {
-                                setValue("interface.defaultTrackers", e.currentTarget.value.split("\n"));
-                            }}
-                        />
-                    </div>
                 </Grid>
+                <div className="flex min-h-0 grow flex-col pt-2">
+                    <TextareaField
+                        wrapperClassName="min-h-0 grow"
+                        className="grow"
+                        minRows={10}
+                        label="Default tracker list"
+                        value={values.defaultTrackers.join("\n")}
+                        onChange={(e) => {
+                            setValue("interface.defaultTrackers", e.currentTarget.value.split("\n"));
+                        }}
+                    />
+                </div>
             </TabsContent>
         </Tabs>
     );

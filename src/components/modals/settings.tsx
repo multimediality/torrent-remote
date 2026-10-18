@@ -63,7 +63,7 @@ function ServerListPanel({ form, current, setCurrent }: ServerListPanelProps) {
     const servers = form.watch("servers");
 
     return (
-        <div className="flex flex-col gap-2">
+        <div className="flex w-1/4 min-w-[12rem] max-w-[20rem] shrink-0 flex-col gap-2">
             <div className={clsx("scrollable mb-2", classes.serverListContainer)}>
                 <div>
                     {servers.map((s, i) => {
@@ -212,7 +212,7 @@ function ServerPanel(props: ServerPanelProps) {
                 label="Accept invalid SSL certificates"
             />
 
-            <div className="grid grid-cols-12 gap-2">
+            <div className="grid min-h-0 grow grid-cols-12 grid-rows-[auto_minmax(0,1fr)] gap-2">
                 <div className="col-span-6">
                     <RhfText
                         control={props.form.control}
@@ -232,8 +232,10 @@ function ServerPanel(props: ServerPanelProps) {
                     />
                 </div>
 
-                <div className="col-span-12">
+                <div className="col-span-12 flex min-h-0 flex-col">
                     <TextareaField
+                        wrapperClassName="min-h-0 grow"
+                        className="grow"
                         label={"Path mappings in \"remote=local\" format, one per line"}
                         onChange={(e) => {
                             const mappings = e.target.value.split("\n")
@@ -249,7 +251,6 @@ function ServerPanel(props: ServerPanelProps) {
                         }}
                         value={mappingsString}
                         minRows={8}
-                        maxRows={8}
                         autoComplete="off"
                         autoCorrect="off"
                         autoCapitalize="off"
@@ -434,16 +435,16 @@ export function AppSettingsModal(props: AppSettingsModalProps) {
             onSave={onSave}
             title="Application Settings"
         >
-            <form onSubmit={(e) => { e.preventDefault(); }}>
-                <Tabs className="min-h-[33rem]" defaultValue="servers">
+            <form className="flex min-h-0 grow flex-col" onSubmit={(e) => { e.preventDefault(); }}>
+                <Tabs className="min-h-[33rem] grow" defaultValue="servers">
                     <TabsList>
                         <TabsTrigger value="servers" className="px-4 py-2.5">Servers</TabsTrigger>
                         <TabsTrigger value="integrations" className="px-4 py-2.5">Integrations</TabsTrigger>
                         {TAURI && <TabsTrigger value="interface" className="px-4 py-2.5">Interface</TabsTrigger>}
                     </TabsList>
 
-                    <TabsContent value="servers" className="pt-2">
-                        <div className="flex h-full min-h-[28rem] gap-2">
+                    <TabsContent value="servers" className="flex flex-col pt-2">
+                        <div className="flex min-h-[28rem] grow gap-2">
                             <ServerListPanel form={form} current={currentServerIndex} setCurrent={setCurrentServerIndex} />
                             {currentServerIndex === -1 || currentServerIndex >= serverCount
                                 ? <></>
@@ -455,7 +456,7 @@ export function AppSettingsModal(props: AppSettingsModalProps) {
                         <IntegrationsPanel form={form} />
                     </TabsContent>
 
-                    {TAURI && <TabsContent value="interface" className="pt-2">
+                    {TAURI && <TabsContent value="interface" className="flex flex-col pt-2">
                         <InterfaceSettigsPanel form={form as unknown as UseFormReturn<InterfaceFormValues>} />
                     </TabsContent>}
                 </Tabs>

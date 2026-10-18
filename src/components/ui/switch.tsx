@@ -23,7 +23,7 @@ function Switch({
             data-size={size}
             className={cn(
                 "peer group/switch relative inline-flex shrink-0 items-center rounded-full border border-transparent transition-colors outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:bg-primary data-[state=unchecked]:bg-input",
-                size === "default" ? "h-5 w-9" : "h-7 min-w-14 w-full text-xs font-semibold",
+                size === "default" ? "h-5 w-9" : "h-7 w-24 text-xs font-semibold",
                 className,
             )}
             {...props}

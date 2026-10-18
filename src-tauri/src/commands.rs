@@ -32,9 +32,9 @@ use crate::{
 /// Base URL of the local proxy server the frontend sends RPC requests through.
 #[tauri::command]
 pub fn backend_address(address: State<ProxyAddress>) -> Result<String, String> {
-    let address = address.0.get();
-    println!("Proxy address requested by frontend: {address:?}");
     address
+        .0
+        .get()
         .map(|addr| format!("http://{addr}"))
         .ok_or_else(|| "proxy server is not running".to_string())
 }

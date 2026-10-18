@@ -156,6 +156,14 @@ async function run(config: Config) {
     );
 }
 
-window.onload = () => {
+function start() {
     new Config().read().then(run).catch(console.error);
-};
+}
+
+// The awaits above (tauri shim, proxy address) can outlast the page load,
+// so do not rely on the load event still being ahead of us.
+if (document.readyState === "complete") {
+    start();
+} else {
+    window.addEventListener("load", start);
+}

@@ -44,6 +44,7 @@ interface FormValues extends InterfaceFormValues {
         deleteAdded: boolean,
         toastNotifications: boolean,
         toastNotificationSound: boolean,
+        autoCheckUpdates: boolean,
         showTrayIcon: boolean,
         onMinimize: WindowMinimizeOption,
         onClose: WindowCloseOption,
@@ -325,6 +326,13 @@ function IntegrationsPanel({ form }: { form: Form }) {
                     <BigSwitch
                         checked={app.toastNotificationSound}
                         onChange={(v) => { form.setValue("app.toastNotificationSound", v); }}
+                    />
+                </div>
+                <div className="col-span-6">Automatically check for updates</div>
+                <div className="col-span-6">
+                    <BigSwitch
+                        checked={app.autoCheckUpdates}
+                        onChange={(v) => { form.setValue("app.autoCheckUpdates", v); }}
                     />
                 </div>
                 <div className="col-span-6">Launch on startup</div>

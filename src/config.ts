@@ -146,6 +146,8 @@ interface Settings {
         toastNotifications: boolean,
         toastNotificationSound: boolean,
         showTrayIcon: boolean,
+        /** look for a new release on start and once a day while running */
+        autoCheckUpdates: boolean,
         onMinimize: WindowMinimizeOption,
         onClose: WindowCloseOption,
         fontSizeBase: number,
@@ -257,6 +259,7 @@ const DefaultSettings: Settings = {
         toastNotifications: true,
         toastNotificationSound: true,
         showTrayIcon: true,
+        autoCheckUpdates: true,
         onMinimize: "minimize",
         onClose: "quit",
         fontSizeBase: 0.9,

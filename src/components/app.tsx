@@ -119,16 +119,21 @@ export default function TauriApp() {
 
     const [serverKey, incServerKey] = useReducer((x) => x + 1, 0);
 
-    // Look for a newer release once the window has settled; an available
-    // update is offered in a notification, failures are only logged.
+    // Look for a newer release once the window has settled and then once a
+    // day, since the app can sit in the tray for weeks. An available update is
+    // offered in a notification, failures are only logged. The setting is read
+    // on every tick so a change in Settings applies without a restart.
     useEffect(() => {
-        const timer = setTimeout(() => {
-            void checkForUpdates(false);
-        }, 5000);
+        const checkIfEnabled = () => {
+            if (config.values.app.autoCheckUpdates) void checkForUpdates(false);
+        };
+        const timer = setTimeout(checkIfEnabled, 5000);
+        const interval = setInterval(checkIfEnabled, 24 * 60 * 60 * 1000);
         return () => {
             clearTimeout(timer);
+            clearInterval(interval);
         };
-    }, []);
+    }, [config]);
 
     const onServerSave = useCallback((servers: ServerConfig[]) => {
         setServers(servers);

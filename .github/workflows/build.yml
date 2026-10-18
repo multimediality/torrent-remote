@@ -171,8 +171,10 @@ jobs:
         run: python3 ci/make_latest_json.py artifacts "${{ github.ref_name }}" "${{ github.repository }}" > artifacts/latest.json && cat artifacts/latest.json
 
       # And create a release with the artifacts attached
-      # Draft release with GitHub's own generated notes (commits since the
-      # previous tag); pre-release tags such as v2.0.0-rc.1 are marked as such.
+      # Created as a draft so "latest" never points at a release whose assets
+      # are still uploading; published by the step below once they are all
+      # attached. Notes are GitHub's generated ones (commits since the previous
+      # tag); pre-release tags such as v2.0.0-rc.1 are marked as such.
       - name: 'create release'
         uses: softprops/action-gh-release@v3
         env:
@@ -182,3 +184,11 @@ jobs:
           prerelease: ${{ contains(github.ref_name, '-') }}
           generate_release_notes: true
           files: ./artifacts/**/*
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          id=$(gh api "repos/${{ github.repository }}/releases" --jq '.[] | select(.tag_name == "${{ github.ref_name }}" and .draft) | .id' | head -n 1)
+          test -n "$id" || { echo "draft release for ${{ github.ref_name }} not found"; exit 1; }
+          gh api -X PATCH "repos/${{ github.repository }}/releases/$id" -F draft=false --jq '.html_url'

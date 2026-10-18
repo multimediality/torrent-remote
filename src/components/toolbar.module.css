@@ -43,3 +43,10 @@
     border-bottom-right-radius: 0;
     border-right: 1px solid rgba(127, 127, 127, 0.25);
 }
+
+/* Let toolbar icons keep the size they ask for (1.5rem like TrguiNG);
+   the shadcn button base style would otherwise cap every svg at 1rem. */
+.toolbarButton svg {
+    width: auto;
+    height: auto;
+}

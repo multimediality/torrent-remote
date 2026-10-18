@@ -383,50 +383,53 @@ function Toolbar(props: ToolbarProps) {
                 spellCheck="false"
             />
 
-            <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                    <ToolbarButton title="Layout">
-                        <Icon.Grid1x2Fill size="1.5rem" style={{ transform: "rotate(-90deg)" }} />
-                    </ToolbarButton>
-                </DropdownMenuTrigger>
+            {/* gap so the focus ring of one button doesn't run into the next */}
+            <div className="flex gap-1.5">
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <ToolbarButton title="Layout">
+                            <Icon.Grid1x2Fill size="1.5rem" style={{ transform: "rotate(-90deg)" }} />
+                        </ToolbarButton>
+                    </DropdownMenuTrigger>
 
-                <DropdownMenuContent className="w-48" align="end">
-                    <DropdownMenuItem onClick={props.toggleMainSplit}>
-                        Change layout
-                        <DropdownMenuShortcut><Kbd>{`${modKeyString()} P`}</Kbd></DropdownMenuShortcut>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={props.toggleFiltersPanel}>
-                        Toggle filters
-                        <DropdownMenuShortcut><Kbd>{`${modKeyString()} Y`}</Kbd></DropdownMenuShortcut>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={props.toggleDetailsPanel}>
-                        Toggle details
-                        <DropdownMenuShortcut><Kbd>{`${modKeyString()} I`}</Kbd></DropdownMenuShortcut>
-                    </DropdownMenuItem>
-                    {props.extra !== undefined
-                        && <DropdownMenuItem onClick={props.toggleTabStrip}>
-                            Toggle tab strip
-                            <DropdownMenuShortcut><Kbd>{`${modKeyString()} [`}</Kbd></DropdownMenuShortcut>
-                        </DropdownMenuItem>}
-                    <DropdownMenuSeparator />
-                    <DropdownMenuLabel>Interface settings</DropdownMenuLabel>
-                    <DropdownMenuItem onClick={onSettingsExport}>
-                        Export
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => { void onSettingsImport(); }}>
-                        Import
-                    </DropdownMenuItem>
-                </DropdownMenuContent>
-            </DropdownMenu>
+                    <DropdownMenuContent className="w-48" align="end">
+                        <DropdownMenuItem onClick={props.toggleMainSplit}>
+                            Change layout
+                            <DropdownMenuShortcut><Kbd>{`${modKeyString()} P`}</Kbd></DropdownMenuShortcut>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={props.toggleFiltersPanel}>
+                            Toggle filters
+                            <DropdownMenuShortcut><Kbd>{`${modKeyString()} Y`}</Kbd></DropdownMenuShortcut>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={props.toggleDetailsPanel}>
+                            Toggle details
+                            <DropdownMenuShortcut><Kbd>{`${modKeyString()} I`}</Kbd></DropdownMenuShortcut>
+                        </DropdownMenuItem>
+                        {props.extra !== undefined
+                            && <DropdownMenuItem onClick={props.toggleTabStrip}>
+                                Toggle tab strip
+                                <DropdownMenuShortcut><Kbd>{`${modKeyString()} [`}</Kbd></DropdownMenuShortcut>
+                            </DropdownMenuItem>}
+                        <DropdownMenuSeparator />
+                        <DropdownMenuLabel>Interface settings</DropdownMenuLabel>
+                        <DropdownMenuItem onClick={onSettingsExport}>
+                            Export
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => { void onSettingsImport(); }}>
+                            Import
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
 
-            <ToolbarButton
-                title="Polling intervals and server settings (F9)"
-                onClick={handlers.daemonSettings}
-            >
-                <Icon.Tools size="1.5rem" />
-            </ToolbarButton>
+                <ToolbarButton
+                    title="Polling intervals and server settings (F9)"
+                    onClick={handlers.daemonSettings}
+                >
+                    <Icon.Tools size="1.5rem" />
+                </ToolbarButton>
 
-            {props.extra}
+                {props.extra}
+            </div>
         </div>
     );
 }

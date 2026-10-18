@@ -17,7 +17,6 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { ActionIcon, Box, Group, Menu, TextInput } from "@mantine/core";
 import * as Icon from "react-bootstrap-icons";
 import classes from "./common.module.css";
 import type {
@@ -33,7 +32,9 @@ import {
 } from "@tanstack/react-table";
 import type { Virtualizer } from "@tanstack/react-virtual";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { ContextMenu, useContextMenu } from "components/contextmenu";
+import { ContextMenu, MenuItem, MenuSpacer, useContextMenu } from "components/contextmenu";
+import { Button } from "components/ui/button";
+import { Input } from "components/ui/input";
 import type { TableName } from "config";
 import { ConfigContext } from "config";
 import React, { memo, useReducer, useCallback, useContext, useEffect, useMemo, useRef, useState, useLayoutEffect } from "react";
@@ -451,7 +452,7 @@ function HeaderRow<TData extends RowData>(
     }, [columnIds, columnOrder, setColumnOrder]);
 
     return (
-        <Box className="tr" onContextMenu={handler} h={`${height}px`}>
+        <div className="tr" onContextMenu={handler} style={{ height: `${height}px` }}>
             <ContextMenu
                 contextMenuInfo={info}
                 setContextMenuInfo={setInfo}
@@ -467,11 +468,16 @@ function HeaderRow<TData extends RowData>(
                                     return (
                                         <Draggable draggableId={column.id} index={index} key={column.id}>
                                             {(provided) => (
-                                                <Group ref={provided.innerRef} {...provided.draggableProps} wrap="nowrap">
-                                                    <Menu.Item
+                                                <div
+                                                    ref={provided.innerRef}
+                                                    {...provided.draggableProps}
+                                                    className="flex flex-nowrap items-center gap-2"
+                                                >
+                                                    <MenuItem
+                                                        className="flex-grow"
                                                         leftSection={column.id === "name"
                                                             ? <Icon.Lock size="1rem" />
-                                                            : visible ? <Icon.Check size="1rem" /> : <Box miw="1rem" />}
+                                                            : visible ? <Icon.Check size="1rem" /> : <MenuSpacer />}
                                                         onClick={() => {
                                                             if (column.id !== "name") {
                                                                 onColumnMenuItemClick(column.id, !visible);
@@ -479,11 +485,11 @@ function HeaderRow<TData extends RowData>(
                                                         }}
                                                     >
                                                         {column.columnDef.header as string}
-                                                    </Menu.Item>
-                                                    <div {...provided.dragHandleProps}>
+                                                    </MenuItem>
+                                                    <div {...provided.dragHandleProps} className="pr-1 text-muted-foreground">
                                                         <Icon.GripVertical size="12" />
                                                     </div>
-                                                </Group>
+                                                </div>
                                             )}
                                         </Draggable>
                                     );
@@ -496,7 +502,7 @@ function HeaderRow<TData extends RowData>(
             </ContextMenu>
             {headerGroup.headers.map((header) => (
                 <HeaderCell key={header.id} header={header} resizerOffset={resizerOffset} />))}
-        </Box>
+        </div>
     );
 }
 
@@ -582,7 +588,7 @@ export function TrguiTable<TData extends RowData>(props: {
 
     return (
         <div className="torrent-table-container">
-            <Box
+            <div
                 ref={headerRefProxy}
                 className={classes.tableHeaderContainer}
                 style={{
@@ -606,7 +612,7 @@ export function TrguiTable<TData extends RowData>(props: {
                         }}
                     />
                 ))}
-            </Box>
+            </div>
             <div
                 ref={parentRefProxy}
                 className="torrent-table-rows"
@@ -723,7 +729,7 @@ export function EditableNameField(props: EditableNameFieldProps) {
     }, [isRenaming, onArrowLeftRight, renameHandler]);
 
     return (
-        <Box
+        <div
             ref={ref}
             onKeyDown={onKeyDown}
             tabIndex={-1}
@@ -733,13 +739,10 @@ export function EditableNameField(props: EditableNameFieldProps) {
         >
             {props.children}
             {isRenaming
-                ? <TextInput
+                ? <Input
                     ref={textRef}
                     value={newName}
-                    classNames={{
-                        root: classes.editableNameRoot,
-                        input: classes.editableNameInput,
-                    }}
+                    className={classes.editableNameInput}
                     onChange={(e) => { setNewName(e.target.value); }}
                     onBlur={() => { setRenaming(false); }}
                     onKeyDown={onTextKeyDown}
@@ -749,24 +752,25 @@ export function EditableNameField(props: EditableNameFieldProps) {
                     autoCapitalize="off"
                     spellCheck="false"
                 />
-                : <Box
+                : <div
                     ref={innerRef}
-                    pl="xs"
+                    className="pl-1"
                     style={{ flexGrow: 1, textOverflow: "ellipsis", overflow: "hidden" }}
                     title={showNameTooltip ? props.currentName : undefined}
                 >
                     {props.currentName}
-                </Box>}
+                </div>}
             {isHover && !isRenaming && props.onUpdate !== undefined
-                ? <ActionIcon
-                    variant="subtle"
+                ? <Button
+                    variant="ghost"
+                    size="icon-xs"
                     onClick={renameHandler}
                     title="Rename (F2)"
                     className={classes.actionIcon}
                 >
                     <Icon.InputCursorText size="1rem" />
-                </ActionIcon>
+                </Button>
                 : <></>}
-        </Box>
+        </div>
     );
 }

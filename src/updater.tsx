@@ -20,6 +20,7 @@ import { Button } from "components/ui/button";
 import { notifications } from "notifications";
 import type { Update } from "@tauri-apps/plugin-updater";
 import React from "react";
+import { isDevBuild } from "trutil";
 
 const { TAURI } = await import(/* webpackChunkName: "taurishim" */"taurishim");
 
@@ -30,9 +31,13 @@ const NOTIFICATION_ID = "app-update";
  * A found update is offered in a notification with an install button.
  * With `manual` the result is always reported, otherwise only an available
  * update is shown and failures (no network, dev build) are just logged.
+ * Automatic checks are skipped in dev builds: their manifests carry the last
+ * release's version, so every newer release would be offered and installing
+ * it would replace the installed app.
  */
 export async function checkForUpdates(manual: boolean) {
     if (!TAURI) return;
+    if (!manual && isDevBuild) return;
 
     const { check } = await import(/* webpackMode: "lazy-once" */ "@tauri-apps/plugin-updater");
 

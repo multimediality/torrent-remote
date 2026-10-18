@@ -117,6 +117,9 @@ function normalizePath(path: string) {
 
 declare const process: { env: { NODE_ENV?: string } };
 
+/** true for webpack development builds (cargo tauri dev, webpack-serve) */
+export const isDevBuild = process.env.NODE_ENV !== "production";
+
 /**
  * Hides the webview's own context menu (Back, Refresh, Print, Inspect...) in
  * release builds. The app draws its own menus where it has them. Text fields
@@ -124,7 +127,7 @@ declare const process: { env: { NODE_ENV?: string } };
  * Inspect stays reachable.
  */
 export function suppressNativeContextMenu() {
-    if (process.env.NODE_ENV !== "production") return;
+    if (isDevBuild) return;
     document.addEventListener("contextmenu", (e) => {
         const target = e.target as HTMLElement | null;
         if (target?.closest("input, textarea, [contenteditable=\"true\"]") != null) return;

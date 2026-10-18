@@ -120,7 +120,15 @@ export default (mode) => ({
             {
                 test: /\.svg$/i,
                 issuer: /\.[jt]sx?$/,
-                use: ["@svgr/webpack"],
+                use: [{
+                    loader: "@svgr/webpack",
+                    options: {
+                        // keep viewBox so sized logos scale instead of being clipped
+                        svgoConfig: {
+                            plugins: [{ name: "preset-default", params: { overrides: { removeViewBox: false } } }],
+                        },
+                    },
+                }],
             },
         ],
         parser: {

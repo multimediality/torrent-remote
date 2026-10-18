@@ -44,11 +44,16 @@ export function VersionModal({ opened, close }: ModalState) {
 
     useEffect(() => {
         if (opened && frontend === undefined) {
-            const { browser, engine, os } = UAParser();
-            let frontend = `${browser.name ?? "unknown"} ${browser.version ?? ""} `;
-            frontend += `(${engine.name ?? "unknown"} ${engine.version ?? ""}) `;
-            frontend += `on ${os.name ?? "unknown"} ${os.version ?? ""}`;
-            setFrontend(frontend);
+            // Chromium freezes the user agent string (Windows 11 reads as
+            // "Windows 10", versions end in .0.0.0); client hints carry the
+            // real values. Browsers without client hints keep the UA result.
+            void (async () => {
+                const { browser, engine, os } = await UAParser().withClientHints();
+                let frontend = `${browser.name ?? "unknown"} ${browser.version ?? ""} `;
+                frontend += `(${engine.name ?? "unknown"} ${engine.version ?? ""}) `;
+                frontend += `on ${os.name ?? "unknown"} ${os.version ?? ""}`;
+                setFrontend(frontend);
+            })();
         }
     }, [opened, frontend]);
 

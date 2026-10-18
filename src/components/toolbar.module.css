@@ -33,6 +33,11 @@
     margin-inline: 0.4rem;
 }
 
+/* the row's ends line up with the container padding, like the rows above and below */
+.toolbarGroup:first-child {
+    margin-inline-start: 0;
+}
+
 .toolbarGroup > :not(:first-child) {
     border-top-left-radius: 0;
     border-bottom-left-radius: 0;

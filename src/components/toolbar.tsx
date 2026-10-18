@@ -383,9 +383,8 @@ function Toolbar(props: ToolbarProps) {
                 spellCheck="false"
             />
 
-            {/* gap so the focus ring of one button doesn't run into the next;
-                the end margin mirrors the left group's (.toolbarGroup) */}
-            <div className="mr-[0.4rem] flex gap-1.5">
+            {/* gap so the focus ring of one button doesn't run into the next */}
+            <div className="flex gap-1.5">
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <ToolbarButton title="Layout">

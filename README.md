@@ -101,7 +101,7 @@ installer and uninstaller, and the MSI, before the updater signatures are made. 
 logs in with `azure/login` through OIDC (no client secret): the Entra app registration
 `github-artifact-signing` holds the Artifact Signing Certificate Profile Signer role on the account
 and a federated credential for this repository's `release` environment, which the Windows build
-jobs run in. Its IDs are the repository secrets `AZURE_TENANT_ID` and `AZURE_CLIENT_ID`; without
+jobs run in. Its IDs are the repository variables `AZURE_TENANT_ID` and `AZURE_CLIENT_ID`; without
 them (forks) the overlay is skipped and builds stay unsigned.
 
 ## How to use Torrent Remote as a web interface

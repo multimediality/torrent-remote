@@ -41,15 +41,15 @@ jobs:
 
     runs-on: ${{ matrix.platform.os }}
     # The Artifact Signing app registration trusts this environment's OIDC
-    # token (subject repo:scdemanett/torrent-remote:environment:release).
-    environment: ${{ matrix.platform.os == 'windows-latest' && 'release' || '' }}
+    # token (subject repo:scdemanett@4528730/torrent-remote@1423019407:environment:release).
+    environment: ${{ matrix.platform.os == 'windows-latest' && vars.AZURE_CLIENT_ID != '' && 'release' || '' }}
     permissions:
       contents: read
       id-token: write
     env:
       # Authenticode signing through Azure Artifact Signing (README, "Code
-      # signing"); forks and runs without the Azure secrets build unsigned.
-      SIGN_WINDOWS: ${{ matrix.platform.os == 'windows-latest' && secrets.AZURE_CLIENT_ID != '' }}
+      # signing"); forks and runs without the Azure variables build unsigned.
+      SIGN_WINDOWS: ${{ matrix.platform.os == 'windows-latest' && vars.AZURE_CLIENT_ID != '' }}
       SIGNING_CLIENT_VERSION: 1.0.146
     steps:
       - name: Disable crlf
@@ -108,8 +108,8 @@ jobs:
         if: env.SIGN_WINDOWS == 'true'
         uses: azure/login@v3
         with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
           allow-no-subscriptions: true
 
       - name: Fetch Artifact Signing client

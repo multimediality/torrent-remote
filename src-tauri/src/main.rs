@@ -32,11 +32,11 @@ use tauri_plugin_window_state::{AppHandleExt, StateFlags};
 use tokio::sync::RwLock;
 use torrentcache::TorrentCacheHandle;
 
+mod args;
 mod commands;
 mod createtorrent;
 mod geoip;
 mod integrations;
-mod ipc;
 #[cfg(target_os = "macos")]
 mod macos;
 mod poller;
@@ -44,25 +44,25 @@ mod sound;
 mod torrentcache;
 mod tray;
 
-struct ListenerHandle(Arc<RwLock<ipc::Ipc>>);
+struct ArgsHandle(Arc<RwLock<args::StartupArgs>>);
 
 #[cfg(target_os = "macos")]
 fn handle_uris(app: &AppHandle, uris: Vec<String>) {
     if uris.is_empty() {
         return;
     }
-    let listener_state: State<ListenerHandle> = app.state();
-    let listener_lock = listener_state.0.clone();
+    let args_state: State<ArgsHandle> = app.state();
+    let args_lock = args_state.0.clone();
     let app_handle = app.clone();
     async_runtime::spawn(async move {
         {
-            let mut listener = listener_lock.write().await;
-            if !listener.listening {
-                listener.push_pending(uris);
+            let mut queue = args_lock.write().await;
+            if !queue.ready {
+                queue.push_pending(uris);
                 return;
             }
         }
-        ipc::deliver_args(&app_handle, uris);
+        args::deliver_args(&app_handle, uris);
     });
 }
 
@@ -139,44 +139,32 @@ fn setup(app: &mut App) -> Result<(), Box<dyn std::error::Error>> {
         let mut poller = poller_state.0.lock().await;
         poller.set_app_handle(&app);
 
-        let listener_state: State<ListenerHandle> = app.state();
-        let listener_lock = listener_state.0.clone();
+        let args_state: State<ArgsHandle> = app.state();
+        let args_lock = args_state.0.clone();
 
-        let mut listener = listener_lock.write().await;
-        listener.init().await;
-        if let Some(addr) = listener.address() {
-            let proxy_address: State<ipc::ProxyAddress> = app.state();
-            proxy_address.0.set(addr).ok();
-        }
-        listener.listen(&app).await.ok();
+        let mut queue = args_lock.write().await;
+        queue.init().await;
 
-        if listener.listening {
-            let listener_lock1 = listener_lock.clone();
-            let _ = app.listen("listener-start", move |_| {
-                let listener_lock = listener_lock1.clone();
-                async_runtime::spawn(async move {
-                    let mut listener = listener_lock.write().await;
-                    listener.start();
-                });
+        let args_lock1 = args_lock.clone();
+        let _ = app.listen("listener-start", move |_| {
+            let args_lock = args_lock1.clone();
+            async_runtime::spawn(async move {
+                args_lock.write().await.start();
             });
-            let listener_lock2 = listener_lock.clone();
-            let _ = app.listen("listener-pause", move |_| {
-                let listener_lock = listener_lock2.clone();
-                async_runtime::spawn(async move {
-                    let mut listener = listener_lock.write().await;
-                    listener.pause().await;
-                });
+        });
+        let args_lock2 = args_lock.clone();
+        let _ = app.listen("listener-pause", move |_| {
+            let args_lock = args_lock2.clone();
+            async_runtime::spawn(async move {
+                args_lock.write().await.pause().await;
             });
-            tray::toggle_main_window(&app, None);
-        } else {
-            log::error!("Unable to start the local proxy server");
-            app.exit(1);
-            return;
-        }
-        torrents.extend(listener.take_pending());
-        drop(listener);
+        });
+        tray::toggle_main_window(&app, None);
 
-        ipc::deliver_args(&app, torrents);
+        torrents.extend(queue.take_pending());
+        drop(queue);
+
+        args::deliver_args(&app, torrents);
 
         let app_clone = app.clone();
         app.listen("app-exit", move |_| {
@@ -233,7 +221,6 @@ fn http_clients() -> HttpClients {
 
 fn main() {
     let context = tauri::generate_context!();
-    let ipc = ipc::Ipc::new();
 
     let app_builder = tauri::Builder::default()
         // must be the first plugin. The lock is keyed by the app identifier,
@@ -256,13 +243,14 @@ fn main() {
                     window => tray::toggle_main_window(app, window),
                 }
             } else {
-                ipc::deliver_args(app, args);
+                args::deliver_args(app, args);
             }
         }))
         .plugin(log_plugin())
         .plugin(tauri_plugin_cli::init())
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_http::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_autostart::init(
@@ -295,10 +283,10 @@ fn main() {
             commands::create_tray,
             commands::save_text_file,
             commands::load_text_file,
-            commands::backend_address,
+            commands::process_torrents,
+            commands::lookup_ips,
         ])
-        .manage(ListenerHandle(Arc::new(RwLock::new(ipc))))
-        .manage(ipc::ProxyAddress::default())
+        .manage(ArgsHandle(Arc::new(RwLock::new(args::StartupArgs::new()))))
         .manage(TorrentCacheHandle::default())
         .manage(PollerHandle::default())
         .manage(MmdbReaderHandle::default())

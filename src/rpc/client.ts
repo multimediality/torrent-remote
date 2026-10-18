@@ -28,8 +28,7 @@ import type { Batcher } from "@yornaath/batshit";
 import { create, keyResolver } from "@yornaath/batshit";
 import { mergeTrackerLists } from "trutil";
 
-const { backendUrl } = await import(/* webpackChunkName: "taurishim" */"taurishim");
-const RUST_BACKEND = backendUrl;
+const { TAURI, tauriFetch, invoke } = await import(/* webpackChunkName: "taurishim" */"taurishim");
 
 class ApiError extends Error { }
 
@@ -81,19 +80,17 @@ export class TransmissionClient {
     timeout: number;
     sessionInfo: SessionInfo;
     insecure: boolean;
+    toast: boolean;
+    sound: boolean;
     ipsBatcher: Batcher<IpLookupResult[], string, IpLookupResult>;
 
     constructor(connection: ServerConnection, toastNotifications: boolean, toastNotificationSound: boolean, timeout = 15) {
-        this.url = encodeURIComponent(connection.url);
+        this.url = connection.url;
         this.headers = {
             "Content-Type": "application/json",
         };
-        if (toastNotifications) {
-            this.headers["X-TorrentRemote-toast"] = "true";
-        }
-        if (toastNotificationSound) {
-            this.headers["X-TorrentRemote-sound"] = "true";
-        }
+        this.toast = toastNotifications;
+        this.sound = toastNotificationSound;
         if (connection.username !== "" || connection.password !== "") {
             const auth = "Basic " + Buffer.from(connection.username + ":" + connection.password, "utf-8").toString("base64");
             this.headers.Authorization = auth;
@@ -127,14 +124,33 @@ export class TransmissionClient {
         return null;
     }
 
+    /**
+     * One POST to the server. In the desktop app it goes through
+     * tauri-plugin-http (Rust side), which allows any header and skips
+     * certificate checks for servers marked as such. The web build talks to
+     * the Transmission server that serves it.
+     */
+    async _post(body: string): Promise<Response> {
+        const init: RequestInit = { method: "POST", headers: this.headers, body };
+        if (this.url === "" || tauriFetch === undefined) {
+            return await fetch("../rpc", { ...init, redirect: "manual" });
+        }
+        try {
+            return await tauriFetch(this.url, {
+                ...init,
+                maxRedirections: 0,
+                connectTimeout: 10_000,
+                signal: AbortSignal.timeout(this.timeout * 1000),
+                danger: { acceptInvalidCerts: this.insecure, acceptInvalidHostnames: this.insecure },
+            });
+        } catch (e) {
+            throw new Error("Network error", { cause: e });
+        }
+    }
+
     async _sendRpc(data: Record<string, unknown>) {
-        const insecureParam = this.insecure ? "&insecure=true" : "";
-        const url = this.url === ""
-            ? "../rpc"
-            : `${RUST_BACKEND}/${data.method === "torrent-get" ? "torrentget" : "post"}?url=${this.url}${insecureParam}`;
         const body = JSON.stringify(data);
-        let response = await fetch(
-            url, { method: "POST", redirect: "manual", headers: this.headers, body });
+        let response = await this._post(body);
 
         if (response.status === 409) {
             const sid = response.headers.get("X-Transmission-Session-Id");
@@ -143,12 +159,16 @@ export class TransmissionClient {
             }
             this.headers["X-Transmission-Session-Id"] = sid;
 
-            response = await fetch(
-                url, { method: "POST", redirect: "manual", headers: this.headers, body });
+            response = await this._post(body);
         }
 
         if (response.ok) {
-            const responseJson = await response.json();
+            const text = await response.text();
+            if (TAURI && data.method === "torrent-get") {
+                // finished-download detection lives on the Rust side
+                void invoke("process_torrents", { url: this.url, body: text, toast: this.toast, sound: this.sound });
+            }
+            const responseJson = JSON.parse(text);
 
             if (responseJson.result !== "success") {
                 console.log("Full response with error:", responseJson);
@@ -156,7 +176,7 @@ export class TransmissionClient {
             }
 
             return responseJson;
-        } else if (response.type === "opaqueredirect") {
+        } else if (response.type === "opaqueredirect" || (response.status >= 300 && response.status < 400)) {
             throw new Error("Server makes a redirect");
         } else if (response.type === "error") {
             throw new Error("Network error");
@@ -396,18 +416,9 @@ export class TransmissionClient {
         });
     }
 
-    async lookupIps(ips: string[]) {
-        const url = `${RUST_BACKEND}/iplookup`;
-        const body = JSON.stringify(ips);
-
-        const response = await fetch(url, { method: "POST", body, headers: { "Content-Type": "application/json" } });
-
-        if (response.ok) {
-            return await response.json();
-        } else {
-            console.log(response);
-            throw new Error(`Server returned error: ${response.status} (${response.statusText})`);
-        }
+    async lookupIps(ips: string[]): Promise<IpLookupResult[]> {
+        if (!TAURI) throw new Error("IP lookup is only available in the desktop app");
+        return await invoke<IpLookupResult[]>("lookup_ips", { ips });
     }
 }
 

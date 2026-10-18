@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use std::fs;
+use std::{fs, net::IpAddr};
 
 use base64::{engine::general_purpose::STANDARD as b64engine, Engine as _};
 use font_loader::system_fonts;
@@ -25,19 +25,38 @@ use tauri_plugin_opener::OpenerExt;
 
 use crate::{
     createtorrent::{CreateCheckResult, CreationRequestsHandle, TorrentCreateInfo},
-    ipc::ProxyAddress,
+    geoip::LookupResult,
     poller::PollerConfig,
+    torrentcache::process_response,
     tray, PollerHandle,
 };
 
-/// Base URL of the local proxy server the frontend sends RPC requests through.
+/// Feeds a torrent-get response the frontend received to the torrent cache,
+/// which detects finished downloads and shows the notification / plays the
+/// sound. The background poller calls the same code while the window is
+/// closed.
 #[tauri::command]
-pub fn backend_address(address: State<ProxyAddress>) -> Result<String, String> {
-    address
-        .0
-        .get()
-        .map(|addr| format!("http://{addr}"))
-        .ok_or_else(|| "proxy server is not running".to_string())
+pub async fn process_torrents(
+    app: tauri::AppHandle,
+    url: String,
+    body: String,
+    toast: bool,
+    sound: bool,
+) {
+    let _ = process_response(&app, body.as_bytes(), &url, toast, sound).await;
+}
+
+/// GeoIP lookup of peer addresses in the bundled DB-IP database.
+#[tauri::command]
+pub async fn lookup_ips(
+    app: tauri::AppHandle,
+    ips: Vec<String>,
+) -> Result<Vec<LookupResult>, String> {
+    let ips = ips
+        .iter()
+        .map(|ip| ip.parse::<IpAddr>().map_err(|e| format!("{ip}: {e}")))
+        .collect::<Result<Vec<_>, _>>()?;
+    Ok(crate::geoip::lookup(&app, ips).await)
 }
 
 #[derive(serde::Serialize)]

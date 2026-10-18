@@ -22,12 +22,12 @@ use tauri::{
     async_runtime,
     menu::{Menu, MenuEvent, MenuItem, PredefinedMenuItem},
     tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
-    AppHandle, Emitter, Listener, Manager, State, WebviewWindow, WebviewWindowBuilder,
+    AppHandle, Emitter, Listener, Manager, WebviewWindow, WebviewWindowBuilder,
 };
 use tauri_plugin_window_state::AppHandleExt;
 use tokio::sync::oneshot;
 
-use crate::{window_state_flags, ListenerHandle};
+use crate::window_state_flags;
 
 pub const TRAY_ID: &str = "tray";
 
@@ -141,10 +141,6 @@ pub fn exit(app: AppHandle) {
         if let Some(window) = app.get_webview_window("main") {
             close_main(window).await;
         }
-
-        let listener_state: State<ListenerHandle> = app.state();
-        let mut listener = listener_state.0.write().await;
-        listener.stop();
         app.exit(0);
     });
 }

@@ -33,6 +33,17 @@
     "dialog:allow-open",
     "dialog:allow-save",
     "clipboard-manager:allow-write-text",
+    {
+      "identifier": "http:default",
+      "allow": [
+        {
+          "url": "http://*:*"
+        },
+        {
+          "url": "https://*:*"
+        }
+      ]
+    },
     "updater:default",
     "process:allow-restart"
   ]

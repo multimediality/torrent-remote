@@ -59,8 +59,11 @@ export const invoke = TAURI
     : async <T>() =>
         await Promise.reject<T>(new Error("Running outside of tauri app"));
 
-// Where the Rust proxy server listens. It picks a free port on every start.
-export const backendUrl: string = TAURI ? await invoke<string>("backend_address") : "";
+// fetch through the Rust side (tauri-plugin-http): no CORS, any header,
+// and per-request acceptance of invalid certificates.
+export const tauriFetch = TAURI
+    ? (await import(/* webpackMode: "lazy-once" */ "@tauri-apps/plugin-http")).fetch
+    : undefined;
 
 export const dialogOpen = TAURI
     ? (await import(/* webpackMode: "lazy-once" */ "@tauri-apps/plugin-dialog")).open

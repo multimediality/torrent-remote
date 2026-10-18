@@ -87,8 +87,8 @@ jobs:
         shell: bash
         run: python3 ci/set_version.py "${GITHUB_REF_NAME#v}"
 
-      # The MSI bundler only accepts numeric pre-release identifiers, so
-      # pre-release tags skip it; the updater uses the NSIS installer anyway.
+      # MSI accepts only numeric pre-release identifiers and RPM none at all,
+      # so pre-release tags skip both; the updater uses NSIS and AppImage.
       - uses: tauri-apps/tauri-action@v0.6.2
         id: tauri_build
         env:
@@ -99,7 +99,7 @@ jobs:
           # shown in the About dialog; git describe would say "dirty" after the version step
           TORRENT_REMOTE_VERSION: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || '' }}
         with:
-          args: --target ${{ matrix.platform.rust_target }} ${{ contains(github.ref_name, '-') && '--config {"bundle":{"targets":["app","appimage","deb","rpm","nsis"]}}' || '' }}
+          args: --target ${{ matrix.platform.rust_target }} ${{ contains(github.ref_name, '-') && '--config {"bundle":{"targets":["app","appimage","deb","nsis"]}}' || '' }}
 
       - name: Git status and version
         run: |

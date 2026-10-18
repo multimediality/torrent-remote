@@ -84,8 +84,17 @@ jobs:
         id: tauri_build
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # minisign key for the in-app updater (bundle.createUpdaterArtifacts)
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           args: --target ${{ matrix.platform.rust_target }}
+
+      # Updater signatures, turned into latest.json by the publish job
+      - uses: actions/upload-artifact@v6
+        with:
+          name: ${{ matrix.platform.rust_target }}-sig
+          path: src-tauri/target/${{ matrix.platform.rust_target }}/release/bundle/**/*.sig
 
       - name: Prepare artifact paths
         if: matrix.platform.os == 'macos-latest'
@@ -151,8 +160,14 @@ jobs:
         run: |
           mv "artifacts/x86_64-apple-darwin/Torrent Remote.app.tar.gz" artifacts/x86_64-apple-darwin/TorrentRemote_x86_64.app.tar.gz
           mv "artifacts/aarch64-apple-darwin/Torrent Remote.app.tar.gz" artifacts/aarch64-apple-darwin/TorrentRemote_aarch64.app.tar.gz
+          mv "artifacts/x86_64-apple-darwin-sig/Torrent Remote.app.tar.gz.sig" artifacts/x86_64-apple-darwin-sig/TorrentRemote_x86_64.app.tar.gz.sig
+          mv "artifacts/aarch64-apple-darwin-sig/Torrent Remote.app.tar.gz.sig" artifacts/aarch64-apple-darwin-sig/TorrentRemote_aarch64.app.tar.gz.sig
       - name: Downloaded artifacts
         run: ls -lhR artifacts/
+
+      # Manifest read by tauri-plugin-updater (plugins.updater.endpoints)
+      - name: Generate latest.json
+        run: python3 ci/make_latest_json.py artifacts "${{ github.ref_name }}" "${{ github.repository }}" > artifacts/latest.json && cat artifacts/latest.json
 
       # Generate changelog
       - id: prevtag

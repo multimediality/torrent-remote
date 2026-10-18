@@ -71,6 +71,21 @@ $ npm run tauri-dev
 Webpack will automatically watch changes in `src/` and refresh the app view, tauri will watch changes
 in `src-tauri/` and rebuild/restart the app as needed.
 
+## Releasing
+
+Tagged releases (`v*`) are built by `.github/workflows/build.yml`, which signs the updater
+bundles with a minisign key and publishes `latest.json` for the in-app updater. The public key is
+in `src-tauri/tauri.conf.json`; the private key lives in the gitignored `.tauri/torrent-remote.key`
+and its password in 1Password. GitHub Actions needs the repository secrets
+`TAURI_SIGNING_PRIVATE_KEY` (the key file contents) and `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`.
+
+For a local release build, load both into the shell first:
+
+```powershell
+. .\scripts\signing-key.ps1; Initialize-SigningKey -WorkspaceRoot (Get-Location)
+npm run build
+```
+
 ## How to use Torrent Remote as a web interface
 
 Transmission supports custom web interfaces, all you have to do is run the daemon with

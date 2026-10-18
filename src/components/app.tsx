@@ -36,6 +36,7 @@ import { modKeyString } from "trutil";
 import { ColorSchemeToggle, FontSizeToggle, ShowVersion } from "./miscbuttons";
 import { AppSettingsModal } from "./modals/settings";
 import { ToolbarButton } from "./toolbar";
+import { checkForUpdates } from "updater";
 import "@mantine/core/styles.css";
 import "@mantine/notifications/styles.css";
 import "css/custom.css";
@@ -117,6 +118,17 @@ export default function TauriApp() {
     const [showServerConfig, serverConfigHandlers] = useDisclosure(false);
 
     const [serverKey, incServerKey] = useReducer((x) => x + 1, 0);
+
+    // Look for a newer release once the window has settled; an available
+    // update is offered in a notification, failures are only logged.
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            void checkForUpdates(false);
+        }, 5000);
+        return () => {
+            clearTimeout(timer);
+        };
+    }, []);
 
     const onServerSave = useCallback((servers: ServerConfig[]) => {
         setServers(servers);

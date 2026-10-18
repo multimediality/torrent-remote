@@ -8,3 +8,6 @@ tests/manual.torrent
 src/build
 .DS_Store
 *.mmdb
+
+# Tauri updater signing keys (public key is embedded in tauri.conf.json; private key + password live in 1Password)
+.tauri/

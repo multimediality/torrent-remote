@@ -17,7 +17,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { Anchor, Box, Divider, Flex, Grid, Text } from "@mantine/core";
+import { Anchor, Box, Button, Divider, Flex, Grid, Text } from "@mantine/core";
 import type { ModalState } from "./common";
 import { HkModal } from "./common";
 import appVersionJson from "build/version.json";
@@ -27,6 +27,7 @@ import TauriLogo from "svg/tauri.svg";
 import AppLogo from "svg/app.svg";
 import { Github } from "react-bootstrap-icons";
 import { UAParser } from "ua-parser-js";
+import { checkForUpdates } from "updater";
 const { TAURI } = await import(/* webpackChunkName: "taurishim" */"taurishim");
 
 interface AppVersion {
@@ -70,7 +71,17 @@ export function VersionModal({ opened, close }: ModalState) {
                 <AppLogo style={{ flexShrink: 0 }} />
                 <Grid>
                     <Grid.Col span={4}>Version</Grid.Col>
-                    <Grid.Col span={8}>{appVersion.gitVersion}</Grid.Col>
+                    <Grid.Col span={8}>
+                        {appVersion.gitVersion}
+                        {TAURI && <Button
+                            variant="light"
+                            size="compact-xs"
+                            ml="md"
+                            onClick={() => { void checkForUpdates(true); }}
+                        >
+                            Check for updates
+                        </Button>}
+                    </Grid.Col>
                     <Grid.Col span={4}>Frontend</Grid.Col>
                     <Grid.Col span={8}>{frontend}</Grid.Col>
                     <Grid.Col span={4}>Build date</Grid.Col>

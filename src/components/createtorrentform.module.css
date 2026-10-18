@@ -1,13 +1,12 @@
 .textAreaRoot {
     flex-grow: 1;
+    min-height: 0;
     display: flex;
     flex-direction: column;
 }
 
-.textAreaWrapper {
-    flex-grow: 1;
-}
-
 .textAreaInput {
-    height: 100%;
+    flex-grow: 1;
+    min-height: 3rem;
+    resize: none;
 }

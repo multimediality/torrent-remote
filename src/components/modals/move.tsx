@@ -17,13 +17,15 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { Button, Checkbox, Divider, Group, Text } from "@mantine/core";
 import React, { useCallback, useEffect, useState } from "react";
 import type { ModalState } from "./common";
 import { HkModal, TorrentLocation, TorrentsNames, useTorrentLocation } from "./common";
 import { useTorrentChangeDirectory } from "queries";
-import { notifications } from "@mantine/notifications";
+import { notifications } from "notifications";
 import { useServerSelectedTorrents, useServerTorrentData } from "rpc/torrent";
+import { Button } from "components/ui/button";
+import { CheckboxField } from "components/ui/fields";
+import { Separator } from "components/ui/separator";
 
 export function MoveModal(props: ModalState) {
     const serverData = useServerTorrentData();
@@ -75,24 +77,23 @@ export function MoveModal(props: ModalState) {
                 opened={props.opened}
                 onClose={props.close}
                 title="Move torrents"
-                centered
                 size="lg"
             >
-                <Divider my="sm" />
-                <Text mb="md">Enter new location for</Text>
+                <Separator className="my-1.5" />
+                <div className="mb-2">Enter new location for</div>
                 <TorrentsNames />
                 <TorrentLocation {...location} focusPath />
-                <Checkbox
+                <CheckboxField
                     label="Move torrent data to new location"
                     checked={moveData}
-                    onChange={(e) => { setMoveData(e.currentTarget.checked); }}
-                    my="xl"
+                    onChange={setMoveData}
+                    className="my-4"
                 />
-                <Divider my="sm" />
-                <Group justify="center" gap="md">
-                    <Button onClick={onMove} variant="filled">Move</Button>
+                <Separator className="my-1.5" />
+                <div className="flex justify-center gap-2">
+                    <Button onClick={onMove}>Move</Button>
                     <Button onClick={props.close} variant="light">Cancel</Button>
-                </Group>
+                </div>
             </HkModal>}
     </>;
 }

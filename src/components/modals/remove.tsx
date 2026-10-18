@@ -17,14 +17,16 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { Button, Checkbox, Divider, Group, Text } from "@mantine/core";
 import type { ModalState } from "./common";
 import { HkModal, TorrentsNames } from "./common";
 import React, { useCallback, useContext, useEffect, useState } from "react";
 import { useRemoveTorrents } from "queries";
-import { notifications } from "@mantine/notifications";
+import { notifications } from "notifications";
 import { useServerSelectedTorrents } from "rpc/torrent";
 import { ConfigContext } from "config";
+import { Button } from "components/ui/button";
+import { CheckboxField } from "components/ui/fields";
+import { Separator } from "components/ui/separator";
 
 export function RemoveModal(props: ModalState) {
     const config = useContext(ConfigContext);
@@ -41,8 +43,7 @@ export function RemoveModal(props: ModalState) {
         }
     }, [config, props.opened]);
 
-    const onDeleteDataChanged = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-        const value = e.currentTarget.checked;
+    const onDeleteDataChanged = useCallback((value: boolean) => {
         setDeleteData(value);
         config.values.interface.deleteTorrentDataSelection = value;
     }, [config]);
@@ -73,30 +74,28 @@ export function RemoveModal(props: ModalState) {
             opened={props.opened}
             onClose={props.close}
             title="Remove torrents"
-            centered
             size="lg"
         >
-            <Divider my="sm" />
-            <Text mb="md">Are you sure you want to remove following torrents?</Text>
+            <Separator className="my-1.5" />
+            <div className="mb-2">Are you sure you want to remove following torrents?</div>
             <TorrentsNames />
-            <Checkbox
+            <CheckboxField
                 label="Delete torrent data"
                 checked={deleteData}
                 onChange={onDeleteDataChanged}
-                my="xl"
+                className="my-4"
             />
-            <Divider my="sm" />
-            <Group justify="center" gap="md">
+            <Separator className="my-1.5" />
+            <div className="flex justify-center gap-2">
                 <Button
                     onClick={onDelete}
-                    variant="filled"
-                    color="red"
+                    variant="destructive"
                     data-autofocus
                 >
                     {deleteData ? "Delete" : "Remove"}
                 </Button>
                 <Button onClick={props.close} variant="light">Cancel</Button>
-            </Group>
+            </div>
         </HkModal>
     );
 }

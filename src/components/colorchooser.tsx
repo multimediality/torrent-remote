@@ -17,9 +17,11 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { ActionIcon, ColorSwatch, Popover, useMantineTheme, Group, Button } from "@mantine/core";
 import type { ColorSetting } from "config";
 import React, { useState } from "react";
+import { Palette, PaletteColorNames, paletteShade } from "palette";
+import { Popover, PopoverContent, PopoverTrigger } from "components/ui/popover";
+import { Button } from "components/ui/button";
 
 interface ColorChooserProps {
     value: ColorSetting,
@@ -28,31 +30,29 @@ interface ColorChooserProps {
 
 const shades = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
 
+function ColorSwatch({ color }: { color: string }) {
+    return (
+        <span
+            className="inline-block size-5 rounded-full border border-border"
+            style={{ backgroundColor: color }}
+        />
+    );
+}
+
 export default function ColorChooser(props: ColorChooserProps) {
-    const theme = useMantineTheme();
     const [opened, setOpened] = useState(false);
 
     return (
-        <Popover
-            width="20rem"
-            position="right-start"
-            withArrow
-            transitionProps={{ duration: 0 }}
-            shadow="md"
-            opened={opened}
-            onChange={setOpened}
-        >
-            <Popover.Target>
-                <ActionIcon variant="subtle" onClick={() => { setOpened((o) => !o); }}>
-                    <ColorSwatch
-                        color={theme.colors[props.value.color][props.value.shade]}
-                    />
-                </ActionIcon>
-            </Popover.Target>
-            <Popover.Dropdown>
+        <Popover open={opened} onOpenChange={setOpened}>
+            <PopoverTrigger asChild>
+                <Button variant="ghost" size="icon-sm" title="Choose color">
+                    <ColorSwatch color={paletteShade(props.value.color, props.value.shade)} />
+                </Button>
+            </PopoverTrigger>
+            <PopoverContent side="right" align="start" className="w-auto p-2">
                 <Button
-                    variant="subtle"
-                    p="lg"
+                    variant="ghost"
+                    className="px-3"
                     onClick={() => {
                         props.onChange(undefined);
                         setOpened(false);
@@ -60,22 +60,24 @@ export default function ColorChooser(props: ColorChooserProps) {
                 >
                     Reset
                 </Button>
-                {Object.keys(theme.colors).map((color) =>
-                    <Group key={color} wrap="nowrap" gap="0">
+                {PaletteColorNames.map((color) =>
+                    <div key={color} className="flex flex-nowrap">
                         {shades.map((shade) =>
-                            <ActionIcon
+                            <Button
                                 key={shade}
-                                m="0.1rem"
-                                variant="subtle"
+                                variant="ghost"
+                                size="icon-sm"
+                                className="m-[0.1rem]"
+                                title={`${color}.${shade}`}
                                 onClick={() => {
-                                    props.onChange({ color, shade, computed: theme.colors[color][shade] });
+                                    props.onChange({ color, shade, computed: Palette[color][shade] });
                                     setOpened(false);
                                 }}
                             >
-                                <ColorSwatch color={theme.colors[color][shade]} />
-                            </ActionIcon>)}
-                    </Group>)}
-            </Popover.Dropdown>
+                                <ColorSwatch color={Palette[color][shade]} />
+                            </Button>)}
+                    </div>)}
+            </PopoverContent>
         </Popover>
     );
 }

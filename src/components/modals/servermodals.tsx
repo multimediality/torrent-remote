@@ -17,7 +17,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { useDisclosure } from "@mantine/hooks";
+import { useDisclosure } from "hooks";
 import React, { memo, useCallback, useEffect, useImperativeHandle, useState } from "react";
 import { EditLabelsModal } from "./editlabels";
 import { RemoveModal } from "./remove";

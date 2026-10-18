@@ -17,12 +17,11 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { Box, Text } from "@mantine/core";
 import type { ModalState } from "./common";
 import { SaveCancelModal, TorrentLabels, TorrentsNames } from "./common";
 import React, { useCallback, useEffect, useState } from "react";
 import { useMutateTorrent } from "queries";
-import { notifications } from "@mantine/notifications";
+import { notifications } from "notifications";
 import { useServerRpcVersion, useServerSelectedTorrents, useServerTorrentData } from "rpc/torrent";
 
 export function EditLabelsModal(props: ModalState) {
@@ -89,23 +88,22 @@ export function EditLabelsModal(props: ModalState) {
                 size="lg"
                 onClose={props.close}
                 onSave={onSave}
-                centered
                 title="Edit torrent labels"
             >
                 {rpcVersion < 16
-                    ? <Text c="red" fz="lg">Labels feature requires transmission 3.0 or later</Text>
+                    ? <div className="text-lg text-destructive">Labels feature requires transmission 3.0 or later</div>
                     : <>
-                        <Text mb="md">Enter new labels for</Text>
+                        <div className="mb-2">Enter new labels for</div>
                         <TorrentsNames />
                     </>}
-                <Box mih="17rem">
+                <div className="min-h-[17rem]">
                     <TorrentLabels
                         labels={labels}
                         setLabels={setLabels}
                         disabled={rpcVersion < 16}
                         initiallyOpened
                     />
-                </Box>
+                </div>
             </SaveCancelModal>}
     </>;
 }

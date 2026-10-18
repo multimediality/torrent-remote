@@ -18,20 +18,27 @@
  */
 
 import React, { useCallback, useEffect, useState } from "react";
-import type { MantineColorScheme } from "@mantine/core";
-import { Box, Checkbox, Grid, HoverCard, NativeSelect, NumberInput, Tabs, TagsInput, Text, Textarea, useComputedColorScheme, useMantineTheme } from "@mantine/core";
-import type { UseFormReturnType } from "@mantine/form";
+import type { UseFormReturn } from "react-hook-form";
 import ColorChooser from "components/colorchooser";
 import { useGlobalStyleOverrides } from "themehooks";
 import { AddTorrentPriorityOptions, AddTorrentStartOptions, DateFormatOptions, DeleteTorrentDataOptions, TimeFormatOptions } from "config";
-import type { AddTorrentPriorityOption, AddTorrentStartOption, ColorSetting, DateFormatOption, DeleteTorrentDataOption, StyleOverrides, TimeFormatOption } from "config";
+import type {
+    AddTorrentPriorityOption, AddTorrentStartOption, ColorScheme, ColorSetting, DateFormatOption,
+    DeleteTorrentDataOption, StyleOverrides, TimeFormatOption,
+} from "config";
 import { ColorSchemeToggle } from "components/miscbuttons";
-import * as Icon from "react-bootstrap-icons";
+import { useComputedColorScheme } from "components/theme";
+import { Palette } from "palette";
+import { RhfCheckbox, RhfNumber } from "components/formfields";
+import { NativeSelect, TextareaField } from "components/ui/fields";
+import { TagsInput } from "components/ui/tags-input";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "components/ui/tabs";
+import { HelpHint } from "./daemon";
 const { TAURI, invoke } = await import(/* webpackChunkName: "taurishim" */"taurishim");
 
 export interface InterfaceFormValues {
     interface: {
-        theme?: MantineColorScheme,
+        theme?: ColorScheme,
         styleOverrides: StyleOverrides,
         skipAddDialog: boolean,
         addTorrentStart: AddTorrentStartOption,
@@ -51,8 +58,11 @@ export interface InterfaceFormValues {
     },
 }
 
-export function InterfaceSettigsPanel<V extends InterfaceFormValues>(props: { form: UseFormReturnType<V> }) {
-    const theme = useMantineTheme();
+function Grid({ children }: React.PropsWithChildren) {
+    return <div className="grid grid-cols-12 items-center gap-2">{children}</div>;
+}
+
+export function InterfaceSettigsPanel({ form }: { form: UseFormReturn<InterfaceFormValues> }) {
     const colorScheme = useComputedColorScheme();
     const { style, setStyle } = useGlobalStyleOverrides();
     const [systemFonts, setSystemFonts] = useState<string[]>(["Default"]);
@@ -68,25 +78,26 @@ export function InterfaceSettigsPanel<V extends InterfaceFormValues>(props: { fo
         }
     }, []);
 
-    const { setFieldValue, setFieldError, clearFieldError } = props.form as unknown as UseFormReturnType<InterfaceFormValues>;
+    const { setValue, setError, clearErrors } = form;
+    const values = form.watch("interface");
 
     useEffect(() => {
-        setFieldValue("interface.theme", colorScheme);
-    }, [setFieldValue, colorScheme]);
+        setValue("interface.theme", colorScheme);
+    }, [setValue, colorScheme]);
 
     const setTextColor = useCallback((color: ColorSetting | undefined) => {
         const newStyle = { dark: { ...style.dark }, light: { ...style.light }, font: style.font };
         newStyle[colorScheme].color = color;
         setStyle(newStyle);
-        setFieldValue("interface.styleOverrides", newStyle);
-    }, [style, colorScheme, setStyle, setFieldValue]);
+        setValue("interface.styleOverrides", newStyle);
+    }, [style, colorScheme, setStyle, setValue]);
 
     const setBgColor = useCallback((backgroundColor: ColorSetting | undefined) => {
         const newStyle = { dark: { ...style.dark }, light: { ...style.light }, font: style.font };
         newStyle[colorScheme].backgroundColor = backgroundColor;
         setStyle(newStyle);
-        setFieldValue("interface.styleOverrides", newStyle);
-    }, [style, colorScheme, setStyle, setFieldValue]);
+        setValue("interface.styleOverrides", newStyle);
+    }, [style, colorScheme, setStyle, setValue]);
 
     const setFont = useCallback((font: string) => {
         const newStyle = {
@@ -95,235 +106,215 @@ export function InterfaceSettigsPanel<V extends InterfaceFormValues>(props: { fo
             font: font === "Default" ? undefined : font,
         };
         setStyle(newStyle);
-        setFieldValue("interface.styleOverrides", newStyle);
-    }, [style, setStyle, setFieldValue]);
+        setValue("interface.styleOverrides", newStyle);
+    }, [style, setStyle, setValue]);
 
     const defaultColor = colorScheme === "dark"
-        ? { color: "dark", shade: 0, computed: theme.colors.dark[0] }
-        : { color: "dark", shade: 9, computed: theme.colors.dark[9] };
+        ? { color: "dark", shade: 0, computed: Palette.dark[0] }
+        : { color: "dark", shade: 9, computed: Palette.dark[9] };
 
     const defaultBg = colorScheme === "dark"
-        ? { color: "dark", shade: 7, computed: theme.colors.dark[7] }
-        : { color: "gray", shade: 0, computed: theme.colors.gray[0] };
+        ? { color: "dark", shade: 7, computed: Palette.dark[7] }
+        : { color: "gray", shade: 0, computed: Palette.gray[0] };
 
     const setPreconfiguredLabels = useCallback((labels: string[]) => {
-        setFieldValue("interface.preconfiguredLabels", labels);
-    }, [setFieldValue]);
+        setValue("interface.preconfiguredLabels", labels);
+    }, [setValue]);
 
     const setIgnoredTrackerPrefixes = useCallback((prefixes: string[]) => {
         try {
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
             const _ = new RegExp(`^(?<prefix>(${prefixes.join("|")})\\d*)\\.[^.]+\\.[^.]+$`, "i");
-            setFieldValue("interface.ignoredTrackerPrefixes", prefixes);
-            clearFieldError("interface.ignoredTrackerPrefixes");
+            setValue("interface.ignoredTrackerPrefixes", prefixes);
+            clearErrors("interface.ignoredTrackerPrefixes");
         } catch {
-            setFieldError("interface.ignoredTrackerPrefixes", "Invalid regex");
+            setError("interface.ignoredTrackerPrefixes", { type: "manual", message: "Invalid regex" });
         }
-    }, [setFieldValue, setFieldError, clearFieldError]);
+    }, [setValue, setError, clearErrors]);
+
+    const ignoredTrackerPrefixesError = form.getFieldState("interface.ignoredTrackerPrefixes", form.formState).error?.message;
 
     return (
-        <Tabs defaultValue="appearance" orientation="vertical" mih="29rem">
-            <Tabs.List>
-                <Tabs.Tab value="appearance" p="lg">Appearance</Tabs.Tab>
-                <Tabs.Tab value="downloads" p="lg">Downloads</Tabs.Tab>
-                <Tabs.Tab value="miscellaneous" p="lg">Miscellaneous</Tabs.Tab>
-            </Tabs.List>
-            <Tabs.Panel value="appearance" p="lg">
-                <Grid align="center">
-                    <Grid.Col span={6}>
+        <Tabs defaultValue="appearance" orientation="vertical" className="min-h-[29rem]">
+            <TabsList>
+                <TabsTrigger value="appearance" className="px-4 py-2.5">Appearance</TabsTrigger>
+                <TabsTrigger value="downloads" className="px-4 py-2.5">Downloads</TabsTrigger>
+                <TabsTrigger value="miscellaneous" className="px-4 py-2.5">Miscellaneous</TabsTrigger>
+            </TabsList>
+            <TabsContent value="appearance" className="p-3">
+                <Grid>
+                    <div className="col-span-6">
                         Theme
-                    </Grid.Col>
-                    <Grid.Col span={6}>
+                    </div>
+                    <div className="col-span-6">
                         <ColorSchemeToggle />
-                    </Grid.Col>
-                    <Grid.Col span={6}>
+                    </div>
+                    <div className="col-span-6">
                         Font
-                    </Grid.Col>
-                    <Grid.Col span={6}>
-                        <NativeSelect data={systemFonts} value={style.font} onChange={(e) => { setFont(e.currentTarget.value); }} />
-                    </Grid.Col>
-                    <Grid.Col span={6}>
+                    </div>
+                    <div className="col-span-6">
+                        <NativeSelect
+                            data={systemFonts}
+                            value={style.font ?? "Default"}
+                            onChange={(e) => { setFont(e.currentTarget.value); }}
+                        />
+                    </div>
+                    <div className="col-span-6">
                         Text color
-                    </Grid.Col>
-                    <Grid.Col span={6}>
+                    </div>
+                    <div className="col-span-6">
                         <ColorChooser value={style[colorScheme].color ?? defaultColor} onChange={setTextColor} />
-                    </Grid.Col>
-                    <Grid.Col span={6}>
+                    </div>
+                    <div className="col-span-6">
                         Background
-                    </Grid.Col>
-                    <Grid.Col span={6}>
+                    </div>
+                    <div className="col-span-6">
                         <ColorChooser value={style[colorScheme].backgroundColor ?? defaultBg} onChange={setBgColor} />
-                    </Grid.Col>
-                    <Grid.Col span={6}>Progress bars</Grid.Col>
-                    <Grid.Col span={3}>
-                        <Checkbox
-                            label="Colorful"
-                            {...props.form.getInputProps("interface.colorfulProgressbars", { type: "checkbox" })}
-                        />
-                    </Grid.Col>
-                    <Grid.Col span={3}>
-                        <Checkbox
-                            label="Animated"
-                            {...props.form.getInputProps("interface.animatedProgressbars", { type: "checkbox" })}
-                        />
-                    </Grid.Col>
-                    <Grid.Col>
-                        <Checkbox
+                    </div>
+                    <div className="col-span-6">Progress bars</div>
+                    <div className="col-span-3">
+                        <RhfCheckbox control={form.control} name="interface.colorfulProgressbars" label="Colorful" />
+                    </div>
+                    <div className="col-span-3">
+                        <RhfCheckbox control={form.control} name="interface.animatedProgressbars" label="Animated" />
+                    </div>
+                    <div className="col-span-12">
+                        <RhfCheckbox
+                            control={form.control}
+                            name="interface.useCustomDateTimeFormat"
+                            className="mt-3"
                             label="Custom date/time format"
-                            mt="lg"
-                            {...props.form.getInputProps("interface.useCustomDateTimeFormat", { type: "checkbox" })}
                         />
-                    </Grid.Col>
-                    <Grid.Col span={6}>
+                    </div>
+                    <div className="col-span-6">
                         <NativeSelect
                             data={[...DateFormatOptions]}
-                            disabled={!props.form.values.interface.useCustomDateTimeFormat}
-                            value={props.form.values.interface.dateFormat}
-                            onChange={(e) => { setFieldValue("interface.dateFormat", e.target.value as DateFormatOption); }}
+                            disabled={!values.useCustomDateTimeFormat}
+                            value={values.dateFormat}
+                            onChange={(e) => { setValue("interface.dateFormat", e.target.value as DateFormatOption); }}
                         />
-                    </Grid.Col>
-                    <Grid.Col span={6}>
+                    </div>
+                    <div className="col-span-6">
                         <NativeSelect
                             data={[...TimeFormatOptions]}
-                            disabled={!props.form.values.interface.useCustomDateTimeFormat}
-                            value={props.form.values.interface.timeFormat}
-                            onChange={(e) => { setFieldValue("interface.timeFormat", e.target.value as TimeFormatOption); }}
+                            disabled={!values.useCustomDateTimeFormat}
+                            value={values.timeFormat}
+                            onChange={(e) => { setValue("interface.timeFormat", e.target.value as TimeFormatOption); }}
                         />
-                    </Grid.Col>
+                    </div>
                 </Grid>
-            </Tabs.Panel>
-            <Tabs.Panel value="downloads" p="lg">
-                <Grid align="center">
-                    <Grid.Col>
-                        <Checkbox
-                            label="Skip add torrent dialog"
-                            {...props.form.getInputProps("interface.skipAddDialog", { type: "checkbox" })}
-                        />
-                    </Grid.Col>
-                    <Grid.Col span={6}>
+            </TabsContent>
+            <TabsContent value="downloads" className="p-3">
+                <Grid>
+                    <div className="col-span-12">
+                        <RhfCheckbox control={form.control} name="interface.skipAddDialog" label="Skip add torrent dialog" />
+                    </div>
+                    <div className="col-span-6">
                         New torrent start
-                    </Grid.Col>
-                    <Grid.Col span={6}>
+                    </div>
+                    <div className="col-span-6">
                         <NativeSelect
                             data={AddTorrentStartOptions}
-                            value={props.form.values.interface.addTorrentStart}
-                            onChange={(e) => { setFieldValue("interface.addTorrentStart", e.target.value as AddTorrentStartOption); }}
+                            value={values.addTorrentStart}
+                            onChange={(e) => { setValue("interface.addTorrentStart", e.target.value as AddTorrentStartOption); }}
                         />
-                    </Grid.Col>
-                    <Grid.Col span={6}>
+                    </div>
+                    <div className="col-span-6">
                         New torrent priority
-                    </Grid.Col>
-                    <Grid.Col span={6}>
+                    </div>
+                    <div className="col-span-6">
                         <NativeSelect
                             data={AddTorrentPriorityOptions}
-                            value={props.form.values.interface.addTorrentPriority}
-                            onChange={(e) => { setFieldValue("interface.addTorrentPriority", e.target.value as AddTorrentPriorityOption); }}
+                            value={values.addTorrentPriority}
+                            onChange={(e) => { setValue("interface.addTorrentPriority", e.target.value as AddTorrentPriorityOption); }}
                         />
-                    </Grid.Col>
-                    <Grid.Col>
-                        <Checkbox
+                    </div>
+                    <div className="col-span-12">
+                        <RhfCheckbox
+                            control={form.control}
+                            name="interface.sortLastSaveDirs"
+                            className="my-3"
                             label="Sort download directories history alphabetically"
-                            my="lg"
-                            {...props.form.getInputProps("interface.sortLastSaveDirs", { type: "checkbox" })}
                         />
-                    </Grid.Col>
-                    <Grid.Col span={9}>Max number of saved download directories</Grid.Col>
-                    <Grid.Col span={3}>
-                        <NumberInput
+                    </div>
+                    <div className="col-span-9">Max number of saved download directories</div>
+                    <div className="col-span-3">
+                        <RhfNumber
+                            control={form.control}
+                            name="interface.numLastSaveDirs"
                             min={1}
                             max={100}
-                            {...props.form.getInputProps("interface.numLastSaveDirs")}
                         />
-                    </Grid.Col>
-                    <Grid.Col>
-                        <Textarea
+                    </div>
+                    <div className="col-span-12">
+                        <TextareaField
                             minRows={6}
                             maxRows={6}
-                            autosize
                             label="Preconfigured directories (one per line)"
-                            value={props.form.values.interface.preconfiguredDirs.join("\n")}
+                            value={values.preconfiguredDirs.join("\n")}
                             onChange={(e) => {
-                                props.form.setFieldValue(
-                                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                    "interface.preconfiguredDirs", e.currentTarget.value.split("\n") as any);
+                                setValue("interface.preconfiguredDirs", e.currentTarget.value.split("\n"));
                             }}
                         />
-                    </Grid.Col>
-                    <Grid.Col>
+                    </div>
+                    <div className="col-span-12">
                         <TagsInput
-                            data={props.form.values.interface.preconfiguredLabels}
-                            value={props.form.values.interface.preconfiguredLabels}
+                            data={values.preconfiguredLabels}
+                            value={values.preconfiguredLabels}
                             onChange={setPreconfiguredLabels}
-                            label={<Box>
+                            label={<span>
                                 <span>Preconfigured labels</span>
-                                <HoverCard width={280} shadow="md">
-                                    <HoverCard.Target>
-                                        <Icon.Question />
-                                    </HoverCard.Target>
-                                    <HoverCard.Dropdown>
-                                        <Text size="sm">
-                                            These labels will always be present in the suggestions list
-                                            and filters even if no existing torrents have them.
-                                        </Text>
-                                    </HoverCard.Dropdown>
-                                </HoverCard>
-                            </Box>}
+                                <HelpHint>
+                                    These labels will always be present in the suggestions list
+                                    and filters even if no existing torrents have them.
+                                </HelpHint>
+                            </span>}
                         />
-                    </Grid.Col>
+                    </div>
                 </Grid>
-            </Tabs.Panel>
-            <Tabs.Panel value="miscellaneous" p="lg">
-                <Grid align="center">
-                    <Grid.Col span={8}>
+            </TabsContent>
+            <TabsContent value="miscellaneous" className="p-3">
+                <Grid>
+                    <div className="col-span-8">
                         Remove torrent dialog delete data option
-                    </Grid.Col>
-                    <Grid.Col span={4}>
+                    </div>
+                    <div className="col-span-4">
                         <NativeSelect
                             data={DeleteTorrentDataOptions}
-                            value={props.form.values.interface.deleteTorrentData}
-                            onChange={(e) => { setFieldValue("interface.deleteTorrentData", e.target.value as DeleteTorrentDataOption); }}
+                            value={values.deleteTorrentData}
+                            onChange={(e) => { setValue("interface.deleteTorrentData", e.target.value as DeleteTorrentDataOption); }}
                         />
-                    </Grid.Col>
-                    <Grid.Col>
+                    </div>
+                    <div className="col-span-12">
                         <TagsInput
-                            data={props.form.values.interface.ignoredTrackerPrefixes}
-                            value={props.form.values.interface.ignoredTrackerPrefixes}
+                            data={values.ignoredTrackerPrefixes}
+                            value={values.ignoredTrackerPrefixes}
                             onChange={setIgnoredTrackerPrefixes}
-                            label={<Box>
+                            label={<span>
                                 <span>Ignored tracker prefixes</span>
-                                <HoverCard width={380} shadow="md">
-                                    <HoverCard.Target>
-                                        <Icon.Question />
-                                    </HoverCard.Target>
-                                    <HoverCard.Dropdown>
-                                        <Text size="sm">
-                                            When subdomain of the tracker looks like one of these strings + (optional) digits,
-                                            it will be omitted. This affects grouping in filters and display in table columns.
-                                            You can use regex here for more advanced filtering, the list will be combined
-                                            using &quot;|&quot;.
-                                        </Text>
-                                    </HoverCard.Dropdown>
-                                </HoverCard>
-                            </Box>}
-                            error={props.form.errors["interface.ignoredTrackerPrefixes"]}
+                                <HelpHint width={380}>
+                                    When subdomain of the tracker looks like one of these strings + (optional) digits,
+                                    it will be omitted. This affects grouping in filters and display in table columns.
+                                    You can use regex here for more advanced filtering, the list will be combined
+                                    using &quot;|&quot;.
+                                </HelpHint>
+                            </span>}
+                            error={ignoredTrackerPrefixesError}
                         />
-                    </Grid.Col>
-                    <Grid.Col>
-                        <Textarea
+                    </div>
+                    <div className="col-span-12">
+                        <TextareaField
                             minRows={10}
                             maxRows={10}
-                            autosize
                             label="Default tracker list"
-                            value={props.form.values.interface.defaultTrackers.join("\n")}
+                            value={values.defaultTrackers.join("\n")}
                             onChange={(e) => {
-                                props.form.setFieldValue(
-                                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                    "interface.defaultTrackers", e.currentTarget.value.split("\n") as any);
+                                setValue("interface.defaultTrackers", e.currentTarget.value.split("\n"));
                             }}
                         />
-                    </Grid.Col>
+                    </div>
                 </Grid>
-            </Tabs.Panel>
+            </TabsContent>
         </Tabs>
     );
 }

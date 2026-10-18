@@ -17,7 +17,6 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { ActionIcon, Box, Button, Checkbox, Divider, Flex, Group, Menu, SegmentedControl, Text, Textarea, TextInput } from "@mantine/core";
 import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import type { ModalState, LocationData } from "./common";
 import { HkModal, TorrentLabels, TorrentLocation, useTorrentLocation } from "./common";
@@ -27,16 +26,23 @@ import type { Torrent } from "rpc/torrent";
 import { useServerTorrentData, useServerRpcVersion } from "rpc/torrent";
 import { CachedFileTree } from "cachedfiletree";
 import { FileTreeTable, useUnwantedFiles } from "components/tables/filetreetable";
-import { notifications } from "@mantine/notifications";
+import { notifications } from "notifications";
 import type { TorrentAddQueryParams } from "queries";
 import { useAddTorrent, useFileTree, useMutateTorrentPath, useTorrentAddTrackers } from "queries";
 import { AddTorrentPriorityOptions, ConfigContext, ServerConfigContext } from "config";
 import type { ServerTabsRef } from "components/servertabs";
 import { bytesToHumanReadableStr, decodeMagnetLink, fileSystemSafeName } from "trutil";
-import { useToggle } from "@mantine/hooks";
+import { useToggle } from "hooks";
 import * as Icon from "react-bootstrap-icons";
 import classes from "./add.module.css";
 import { useTransmissionClient } from "rpc/client";
+import { paletteColor } from "palette";
+import { cn } from "lib/utils";
+import { Button } from "components/ui/button";
+import { CheckboxField, TextInput, TextareaField } from "components/ui/fields";
+import { SegmentedControl } from "components/ui/segmented-control";
+import { Separator } from "components/ui/separator";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "components/ui/dropdown-menu";
 
 const { TAURI, dialogOpen, invoke } = await import(/* webpackChunkName: "taurishim" */"taurishim");
 
@@ -56,6 +62,7 @@ interface AddCommonProps extends React.PropsWithChildren {
 
 function AddCommon(props: AddCommonProps) {
     const rpcVersion = useServerRpcVersion();
+    const priorityColor = PriorityColors.get(props.priority);
 
     return <>
         <TorrentLocation {...props.location} inputLabel="Download directory" disabled={props.disabled} />
@@ -66,26 +73,26 @@ function AddCommon(props: AddCommonProps) {
                 inputLabel="Labels"
                 disabled={props.disabled}
             />}
-        <Group>
-            <Checkbox
+        <div className="flex flex-wrap items-center gap-2">
+            <CheckboxField
                 label="Start torrent"
                 checked={props.start}
                 disabled={props.disabled}
-                onChange={(e) => { props.setStart(e.currentTarget.checked); }}
-                my="xl"
+                onChange={props.setStart}
+                className="my-4"
             />
             {rpcVersion >= 18
-                && <Checkbox
+                && <CheckboxField
                     label="Sequential"
                     checked={props.sequential}
                     disabled={props.disabled}
-                    onChange={(e) => { props.setSequential(e.currentTarget.checked); }}
-                    my="xl"
+                    onChange={props.setSequential}
+                    className="my-4"
                 />}
             <div style={{ flexGrow: 1 }} />
             {props.children}
             <SegmentedControl
-                color={PriorityColors.get(props.priority)}
+                color={priorityColor === undefined ? undefined : paletteColor(priorityColor)}
                 value={String(props.priority)}
                 onChange={(value) => { props.setPriority(+value as PriorityNumberType); }}
                 disabled={props.disabled}
@@ -94,7 +101,7 @@ function AddCommon(props: AddCommonProps) {
                     label: v,
                 }))}
             />
-        </Group>
+        </div>
     </>;
 }
 
@@ -170,18 +177,18 @@ function TabSwitchDropdown({ tabsRef }: { tabsRef: React.RefObject<ServerTabsRef
     return (
         tabsRef.current == null
             ? <></>
-            : <Menu shadow="md" width={200} position="bottom-start">
-                <Menu.Target>
-                    <Button variant="subtle" title="Switch server">
+            : <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm" title="Switch server">
                         {value}
                     </Button>
-                </Menu.Target>
+                </DropdownMenuTrigger>
 
-                <Menu.Dropdown>
+                <DropdownMenuContent align="start" className="w-[200px]">
                     {tabsRef.current.getOpenTabs().map((tab) =>
-                        <Menu.Item key={tab} onClick={() => { onChange(tab); }}>{tab}</Menu.Item>)}
-                </Menu.Dropdown>
-            </Menu>
+                        <DropdownMenuItem key={tab} onClick={() => { onChange(tab); }}>{tab}</DropdownMenuItem>)}
+                </DropdownMenuContent>
+            </DropdownMenu>
     );
 }
 
@@ -271,7 +278,7 @@ export function AddMagnet(props: AddCommonModalProps) {
         const links = magnet.split(/\r?\n/).map((l) => l.trim()).filter((l) => l !== "");
         if (links.length === 0) return;
 
-        const queue: Array<LinkData> = [];
+        const queue: LinkData[] = [];
 
         // Parse all links and determine if each is new or existing
         for (const link of links) {
@@ -395,18 +402,15 @@ export function AddMagnet(props: AddCommonModalProps) {
             && <HkModal
                 opened={true}
                 onClose={close}
-                centered
                 size="xl"
-                styles={{ title: { flexGrow: 1 } }}
-                title={<Flex w="100%" align="center" justify="space-between">
+                title={<div className="flex w-full items-center justify-between">
                     <span>Add torrent by magnet link or URL</span>
                     {TAURI && <TabSwitchDropdown tabsRef={props.tabsRef} />}
-                </Flex>}
+                </div>}
             >
-                <Divider my="sm" />
-                <Textarea
+                <Separator className="my-1.5" />
+                <TextareaField
                     label="Magnet links, one per line"
-                    w="100%"
                     value={magnet}
                     onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => { setMagnet(e.currentTarget.value); }}
                     onKeyDown={(e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -420,22 +424,20 @@ export function AddMagnet(props: AddCommonModalProps) {
                     autoCorrect="off"
                     autoCapitalize="off"
                     spellCheck="false"
-                    autosize
                     minRows={6}
                     maxRows={25}
                 />
                 <AddCommon {...common.props} disabled={existingTorrent !== undefined} />
-                <Divider my="sm" />
-                <Group justify="center" gap="md">
+                <Separator className="my-1.5" />
+                <div className="flex justify-center gap-2">
                     <Button
                         onClick={onAdd}
-                        variant="filled"
                         disabled={addDisabled}
                     >
                         {existingTorrent === undefined ? "Add" : "Add trackers"}
                     </Button>
                     <Button onClick={props.close} variant="light">Cancel</Button>
-                </Group>
+                </div>
             </HkModal>}
     </>;
 }
@@ -791,28 +793,23 @@ export function AddTorrent(props: AddCommonModalProps) {
             && <HkModal
                 opened={true}
                 onClose={modalClose}
-                centered
                 size="xl"
                 fullScreen={fullScreen}
-                styles={{
-                    title: { flexGrow: 1 },
-                    content: { display: fullScreen ? "flex" : "block", flexDirection: "column" },
-                    body: { display: fullScreen ? "flex" : "block", flexDirection: "column", flexGrow: 1 },
-                }}
-                title={<Flex w="100%" align="center">
+                bodyClassName={fullScreen ? "flex-grow" : undefined}
+                title={<div className="flex w-full items-center">
                     <span>Add torrent</span>
-                    <Box className={classes.flexGrow} />
+                    <div className={classes.flexGrow} />
                     {TAURI && <>
                         <TabSwitchDropdown tabsRef={props.tabsRef} />
-                        <ActionIcon variant="subtle" onClick={() => { toggleFullScreen(); }}>
+                        <Button variant="ghost" size="icon-sm" onClick={() => { toggleFullScreen(); }}>
                             {fullScreen ? <Icon.FullscreenExit /> : <Icon.ArrowsFullscreen />}
-                        </ActionIcon>
+                        </Button>
                     </>}
-                </Flex>}
+                </div>}
             >
-                <Divider my="sm" />
+                <Separator className="my-1.5" />
                 {torrentExists
-                    ? <Text c="red" fw="bold" fz="lg">Torrent already exists</Text>
+                    ? <div className="text-lg font-bold text-destructive">Torrent already exists</div>
                     : <TextInput
                         disabled={!TAURI || torrentData.length > 1}
                         value={torrentName}
@@ -820,12 +817,12 @@ export function AddTorrent(props: AddCommonModalProps) {
                     />}
                 <AddCommon {...common.props} disabled={torrentExists}>
                     {(wantedSize > 0 || torrentData[0].files != null)
-                        && <Text>{bytesToHumanReadableStr(wantedSize)}</Text>}
+                        && <span>{bytesToHumanReadableStr(wantedSize)}</span>}
                     {(torrentData.length > 1 || torrentData[0].files == null)
                         ? <></>
                         : <>
                             <Button
-                                variant="subtle"
+                                variant="ghost"
                                 disabled={torrentExists}
                                 onClick={() => { setAllWanted(true); }}
                                 title="Mark all files wanted"
@@ -833,7 +830,7 @@ export function AddTorrent(props: AddCommonModalProps) {
                                 All
                             </Button>
                             <Button
-                                variant="subtle"
+                                variant="ghost"
                                 disabled={torrentExists}
                                 onClick={() => { setAllWanted(false); }}
                                 title="Mark all files unwanted"
@@ -844,26 +841,25 @@ export function AddTorrent(props: AddCommonModalProps) {
                 </AddCommon>
                 {(torrentData.length > 1 || torrentData[0].files == null)
                     ? <></>
-                    : <Box w="100%" h="15rem" className={classes.fileTreeContainer}>
+                    : <div className={cn("w-full", fullScreen ? "min-h-[15rem]" : "h-[15rem]", classes.fileTreeContainer)}>
                         <FileTreeTable
                             fileTree={fileTree}
                             data={data}
                             brief
                             onCheckboxChange={onCheckboxChange}
                         />
-                    </Box>}
-                <Divider my="sm" />
-                <Group justify="center" gap="md">
+                    </div>}
+                <Separator className="my-1.5" />
+                <div className="flex justify-center gap-2">
                     <Button
                         onClick={onAdd}
-                        variant="filled"
                         data-autofocus
                         disabled={torrentExists && torrentData[0].trackers.length === 0}
                     >
                         {!torrentExists ? "Add" : "Add trackers"}
                     </Button>
                     <Button onClick={modalClose} variant="light">Cancel</Button>
-                </Group>
+                </div>
             </HkModal>}
     </>);
 }

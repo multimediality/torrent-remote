@@ -17,10 +17,6 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import {
-    ActionIcon, Box, Button, Checkbox, Flex, Grid, Group, PasswordInput, SegmentedControl,
-    Stack, Switch, Tabs, Text, Textarea, TextInput,
-} from "@mantine/core";
 import classes from "./settings.module.css";
 import clsx from "clsx";
 import type { ServerConfig, WindowCloseOption, WindowMinimizeOption } from "config";
@@ -29,11 +25,17 @@ import React, { useCallback, useContext, useEffect, useMemo, useState } from "re
 import type { ModalState } from "./common";
 import { SaveCancelModal } from "./common";
 import * as Icon from "react-bootstrap-icons";
-import type { UseFormReturnType } from "@mantine/form";
-import { useForm } from "@mantine/form";
+import type { UseFormReturn } from "react-hook-form";
+import { useFieldArray, useForm } from "react-hook-form";
 import { UAParser } from "ua-parser-js";
 import type { InterfaceFormValues } from "./interfacepanel";
 import { InterfaceSettigsPanel } from "./interfacepanel";
+import { RhfCheckbox, RhfPassword, RhfText } from "components/formfields";
+import { Button } from "components/ui/button";
+import { TextareaField } from "components/ui/fields";
+import { SegmentedControl } from "components/ui/segmented-control";
+import { Switch } from "components/ui/switch";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "components/ui/tabs";
 const { TAURI, invoke } = await import(/* webpackChunkName: "taurishim" */"taurishim");
 
 interface FormValues extends InterfaceFormValues {
@@ -48,39 +50,45 @@ interface FormValues extends InterfaceFormValues {
     },
 }
 
+type Form = UseFormReturn<FormValues>;
+
 interface ServerListPanelProps {
-    form: UseFormReturnType<FormValues>,
+    form: Form,
     current: number,
     setCurrent: React.Dispatch<number>,
 }
 
 function ServerListPanel({ form, current, setCurrent }: ServerListPanelProps) {
+    const { append, remove, move } = useFieldArray({ control: form.control, name: "servers" });
+    const servers = form.watch("servers");
+
     return (
-        <Stack>
-            <Box mb="md" className={clsx("scrollable", classes.serverListContainer)}>
+        <div className="flex flex-col gap-2">
+            <div className={clsx("scrollable mb-2", classes.serverListContainer)}>
                 <div>
-                    {form.values.servers.map((s, i) => {
+                    {servers.map((s, i) => {
                         let isDuplicate = false;
-                        form.values.servers.forEach((other, otherIndex) => {
+                        servers.forEach((other, otherIndex) => {
                             if (otherIndex !== i && other.name === s.name) isDuplicate = true;
                         });
-                        return <Box
+                        return <div
                             key={i}
-                            px="sm"
-                            className={i === current ? "selected" : ""}
+                            className={`px-1.5 ${i === current ? "selected" : ""}`}
                             style={{ textDecoration: isDuplicate ? "red wavy underline" : undefined }}
                             onClick={() => { setCurrent(i); }}
                         >
                             {s.name}
-                        </Box>;
+                        </div>;
                     })}
                 </div>
-            </Box>
-            <Group justify="space-between" wrap="nowrap">
-                <ActionIcon
+            </div>
+            <div className="flex flex-nowrap justify-between">
+                <Button
                     variant="light"
+                    size="icon-md"
+                    title="Add server"
                     onClick={() => {
-                        form.insertListItem("servers", {
+                        append({
                             connection: { url: "", username: "", password: "", acceptInvalidCerts: false },
                             name: "new",
                             pathMappings: [],
@@ -88,75 +96,108 @@ function ServerListPanel({ form, current, setCurrent }: ServerListPanelProps) {
                             lastSaveDirs: [],
                             intervals: { session: 60, torrents: 5, torrentsMinimized: 60, details: 5 },
                         });
-                        form.validate();
-                        setCurrent(form.values.servers.length);
+                        void form.trigger();
+                        setCurrent(servers.length);
                     }}
                 >
                     <Icon.PlusSquare size="1.6rem" color="royalblue" />
-                </ActionIcon>
-                <ActionIcon
+                </Button>
+                <Button
                     variant="light"
+                    size="icon-md"
+                    title="Remove server"
                     onClick={() => {
-                        if (current >= form.values.servers.length - 1) {
-                            setCurrent(form.values.servers.length - 2);
+                        if (current < 0) return;
+                        if (current >= servers.length - 1) {
+                            setCurrent(servers.length - 2);
                         }
-                        form.removeListItem("servers", current);
+                        remove(current);
                     }}
                 >
                     <Icon.DashSquare size="1.6rem" color="royalblue" />
-                </ActionIcon>
-                <ActionIcon
+                </Button>
+                <Button
                     variant="light"
+                    size="icon-md"
+                    title="Move up"
                     onClick={() => {
                         if (current > 0) {
-                            form.reorderListItem("servers", { from: current, to: current - 1 });
+                            move(current, current - 1);
                             setCurrent(current - 1);
                         }
                     }}
                 >
                     <Icon.ArrowUpSquare size="1.6rem" color="royalblue" />
-                </ActionIcon>
-                <ActionIcon
+                </Button>
+                <Button
                     variant="light"
+                    size="icon-md"
+                    title="Move down"
                     onClick={() => {
-                        if (current < form.values.servers.length - 1) {
-                            form.reorderListItem("servers", { from: current, to: current + 1 });
+                        if (current < servers.length - 1) {
+                            move(current, current + 1);
                             setCurrent(current + 1);
                         }
                     }}
                 >
                     <Icon.ArrowDownSquare size="1.6rem" color="royalblue" />
-                </ActionIcon>
-            </Group>
-        </Stack>
+                </Button>
+            </div>
+        </div>
     );
 }
 
 interface ServerPanelProps {
-    form: UseFormReturnType<FormValues>,
+    form: Form,
     current: number,
+}
+
+function validateServerName(value: unknown, values: FormValues, index: number) {
+    let found = false;
+    values.servers.forEach((server, i) => {
+        if (i !== index && value === server.name) {
+            found = true;
+        }
+    });
+    return found ? "Server names must be unique" : true;
+}
+
+function validateServerUrl(value: unknown) {
+    try {
+        const url = new URL(String(value));
+        if (!["http:", "https:"].includes(url.protocol)) {
+            return "Only http/https URLs are supported";
+        }
+    } catch {
+        return "Invalid URL";
+    }
+    return true;
 }
 
 function ServerPanel(props: ServerPanelProps) {
     const [mappingsString, setMappingsString] = useState("");
-    const server = props.form.values.servers[props.current];
+    const pathMappings = props.form.watch(`servers.${props.current}.pathMappings`);
 
     useEffect(() => {
-        setMappingsString(server.pathMappings.map((m) => `${m.from}=${m.to}`).join("\n"));
-    }, [server.pathMappings]);
+        setMappingsString(pathMappings.map((m) => `${m.from}=${m.to}`).join("\n"));
+    }, [pathMappings]);
 
     return (
-        <div style={{ flexGrow: 1 }}>
-            <TextInput
+        <div className="flex flex-grow flex-col gap-2">
+            <RhfText
+                control={props.form.control}
+                name={`servers.${props.current}.name`}
+                rules={{ validate: (value, values) => validateServerName(value, values, props.current) }}
                 label="Name"
-                {...props.form.getInputProps(`servers.${props.current}.name`)}
                 autoCorrect="off"
                 autoCapitalize="off"
             />
 
-            <TextInput
+            <RhfText
+                control={props.form.control}
+                name={`servers.${props.current}.connection.url`}
+                rules={{ validate: validateServerUrl }}
                 label="Server rpc url"
-                {...props.form.getInputProps(`servers.${props.current}.connection.url`)}
                 placeholder="http://1.2.3.4:9091/transmission/rpc"
                 autoComplete="off"
                 autoCorrect="off"
@@ -164,35 +205,37 @@ function ServerPanel(props: ServerPanelProps) {
                 spellCheck="false"
             />
 
-            <Checkbox
-                my="md"
+            <RhfCheckbox
+                control={props.form.control}
+                name={`servers.${props.current}.connection.acceptInvalidCerts`}
+                className="my-2"
                 label="Accept invalid SSL certificates"
-                {...props.form.getInputProps(`servers.${props.current}.connection.acceptInvalidCerts`, { type: "checkbox" })}
             />
 
-            <Grid>
-                <Grid.Col span={6}>
-                    <TextInput
+            <div className="grid grid-cols-12 gap-2">
+                <div className="col-span-6">
+                    <RhfText
+                        control={props.form.control}
+                        name={`servers.${props.current}.connection.username`}
                         label="User name"
-                        {...props.form.getInputProps(`servers.${props.current}.connection.username`)}
                         autoComplete="off"
                         autoCorrect="off"
                         autoCapitalize="off"
                         spellCheck="false"
                     />
-                </Grid.Col>
-                <Grid.Col span={6}>
-                    <PasswordInput
+                </div>
+                <div className="col-span-6">
+                    <RhfPassword
+                        control={props.form.control}
+                        name={`servers.${props.current}.connection.password`}
                         label="Password"
-                        {...props.form.getInputProps(`servers.${props.current}.connection.password`)}
                     />
-                </Grid.Col>
+                </div>
 
-                <Grid.Col span={12}>
-                    <Textarea
+                <div className="col-span-12">
+                    <TextareaField
                         label={"Path mappings in \"remote=local\" format, one per line"}
                         onChange={(e) => {
-                            // TODO fix
                             const mappings = e.target.value.split("\n")
                                 .map((line) => {
                                     const equalsPos = line.indexOf("=") + 1;
@@ -201,23 +244,37 @@ function ServerPanel(props: ServerPanelProps) {
                                         to: line.substring(equalsPos),
                                     };
                                 });
-                            props.form.setFieldValue(`servers.${props.current}.pathMappings`, mappings);
+                            props.form.setValue(`servers.${props.current}.pathMappings`, mappings);
                             setMappingsString(e.target.value);
                         }}
                         value={mappingsString}
-                        autosize
                         minRows={8}
                         maxRows={8}
+                        autoComplete="off"
+                        autoCorrect="off"
+                        autoCapitalize="off"
+                        spellCheck="false"
                     />
-                </Grid.Col>
-            </Grid>
+                </div>
+            </div>
         </div>
     );
 }
 
-const bigSwitchStyles = { track: { flexGrow: 1 } };
+function BigSwitch({ checked, onChange }: { checked: boolean, onChange: (checked: boolean) => void }) {
+    return (
+        <Switch
+            size="lg"
+            onLabel="ON"
+            offLabel="OFF"
+            checked={checked}
+            onCheckedChange={onChange}
+            className="w-full min-w-16"
+        />
+    );
+}
 
-function IntegrationsPanel({ form }: { form: UseFormReturnType<FormValues> }) {
+function IntegrationsPanel({ form }: { form: Form }) {
     const platform = useMemo(() => UAParser().os.name ?? "unknown", []);
 
     const [autostart, setAutostart] = useState(false);
@@ -237,104 +294,90 @@ function IntegrationsPanel({ form }: { form: UseFormReturnType<FormValues> }) {
         }
     }, []);
 
-    const onChangeAutostart = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-        const state = e.target.checked;
+    const onChangeAutostart = useCallback((state: boolean) => {
         setAutostart(state);
         void invoke("app_integration", { mode: state ? "autostart" : "noautostart" });
     }, []);
 
+    const app = form.watch("app");
+
     return (
-        <Grid align="center" gap="md">
-            <Grid.Col span={6}>Delete successfully added torrent files</Grid.Col>
-            <Grid.Col span={2}>
-                <Switch
-                    onLabel="ON"
-                    offLabel="OFF"
-                    size="xl"
-                    styles={bigSwitchStyles}
-                    {...form.getInputProps("app.deleteAdded", { type: "checkbox" })}
+        <div className="grid grid-cols-12 items-center gap-2">
+            <div className="col-span-6">Delete successfully added torrent files</div>
+            <div className="col-span-2">
+                <BigSwitch
+                    checked={app.deleteAdded}
+                    onChange={(v) => { form.setValue("app.deleteAdded", v); }}
                 />
-            </Grid.Col>
-            <Grid.Col span={4}></Grid.Col>
-            <Grid.Col span={6}>Show notifications for completed torrents</Grid.Col>
-            <Grid.Col span={2}>
-                <Switch
-                    onLabel="ON"
-                    offLabel="OFF"
-                    size="xl"
-                    styles={bigSwitchStyles}
-                    {...form.getInputProps("app.toastNotifications", { type: "checkbox" })}
+            </div>
+            <div className="col-span-4"></div>
+            <div className="col-span-6">Show notifications for completed torrents</div>
+            <div className="col-span-2">
+                <BigSwitch
+                    checked={app.toastNotifications}
+                    onChange={(v) => { form.setValue("app.toastNotifications", v); }}
                 />
-            </Grid.Col>
-            <Grid.Col span={2}>Play sound</Grid.Col>
-            <Grid.Col span={2}>
-                <Switch
-                    onLabel="ON"
-                    offLabel="OFF"
-                    size="xl"
-                    styles={bigSwitchStyles}
-                    {...form.getInputProps("app.toastNotificationSound", { type: "checkbox" })}
+            </div>
+            <div className="col-span-2">Play sound</div>
+            <div className="col-span-2">
+                <BigSwitch
+                    checked={app.toastNotificationSound}
+                    onChange={(v) => { form.setValue("app.toastNotificationSound", v); }}
                 />
-            </Grid.Col>
-            <Grid.Col span={6}>Launch on startup</Grid.Col>
-            <Grid.Col span={2}>
-                <Switch
-                    onLabel="ON"
-                    offLabel="OFF"
-                    size="xl"
-                    styles={bigSwitchStyles}
+            </div>
+            <div className="col-span-6">Launch on startup</div>
+            <div className="col-span-2">
+                <BigSwitch
                     checked={autostart}
                     onChange={onChangeAutostart}
                 />
-            </Grid.Col>
-            <Grid.Col span={4}></Grid.Col>
+            </div>
+            <div className="col-span-4"></div>
             {platform === "Windows" && <>
-                <Grid.Col span={6}>Associate application</Grid.Col>
-                <Grid.Col span={3}><Button onClick={associateTorrent}>.torrent files</Button></Grid.Col>
-                <Grid.Col span={3}><Button onClick={associateMagnet}>magnet links</Button></Grid.Col>
+                <div className="col-span-6">Associate application</div>
+                <div className="col-span-3"><Button onClick={associateTorrent}>.torrent files</Button></div>
+                <div className="col-span-3"><Button onClick={associateMagnet}>magnet links</Button></div>
             </>}
-            <Grid.Col span={6}>Show tray icon</Grid.Col>
-            <Grid.Col span={2}>
-                <Switch
-                    onLabel="ON"
-                    offLabel="OFF"
-                    size="xl"
-                    styles={bigSwitchStyles}
-                    checked={form.values.app.showTrayIcon}
-                    onChange={(e) => {
-                        form.setFieldValue("app.showTrayIcon", e.currentTarget.checked);
-                        if (!e.currentTarget.checked) {
-                            form.setFieldValue("app.onMinimize", "minimize");
-                            form.setFieldValue("app.onClose", "quit");
+            <div className="col-span-6">Show tray icon</div>
+            <div className="col-span-2">
+                <BigSwitch
+                    checked={app.showTrayIcon}
+                    onChange={(checked) => {
+                        form.setValue("app.showTrayIcon", checked);
+                        if (!checked) {
+                            form.setValue("app.onMinimize", "minimize");
+                            form.setValue("app.onClose", "quit");
                         }
                     }}
                 />
-            </Grid.Col>
-            <Grid.Col span={4}>(takes effect after restart)</Grid.Col>
-            <Grid.Col span={6}>When minimized</Grid.Col>
-            <Grid.Col span={6}>
+            </div>
+            <div className="col-span-4">(takes effect after restart)</div>
+            <div className="col-span-6">When minimized</div>
+            <div className="col-span-6">
                 <SegmentedControl
-                    data={WindowMinimizeOptions as unknown as string[]}
-                    disabled={!form.values.app.showTrayIcon}
-                    {...form.getInputProps("app.onMinimize")}
+                    data={WindowMinimizeOptions}
+                    disabled={!app.showTrayIcon}
+                    value={app.onMinimize}
+                    onChange={(value) => { form.setValue("app.onMinimize", value as WindowMinimizeOption); }}
                 />
-            </Grid.Col>
-            <Grid.Col span={6}>When closed</Grid.Col>
-            <Grid.Col span={6}>
+            </div>
+            <div className="col-span-6">When closed</div>
+            <div className="col-span-6">
                 <SegmentedControl
-                    data={WindowCloseOptions as unknown as string[]}
-                    disabled={!form.values.app.showTrayIcon}
-                    {...form.getInputProps("app.onClose")}
+                    data={WindowCloseOptions}
+                    disabled={!app.showTrayIcon}
+                    value={app.onClose}
+                    onChange={(value) => { form.setValue("app.onClose", value as WindowCloseOption); }}
                 />
-            </Grid.Col>
-            <Grid.Col>
-                <Text fz="sm" fs="italic">
+            </div>
+            <div className="col-span-12">
+                <p className="text-sm italic">
                     Hiding the window keeps frontend running, this uses more RAM but reopening the window is nearly instant.
                     Closing the window shuts down the webview, in this mode reopening the window is slower.
                     You can always access the window through the system tray icon.
-                </Text>
-            </Grid.Col>
-        </Grid>
+                </p>
+            </div>
+        </div>
     );
 }
 
@@ -345,65 +388,42 @@ interface AppSettingsModalProps extends ModalState {
 export function AppSettingsModal(props: AppSettingsModalProps) {
     const config = useContext(ConfigContext);
     const form = useForm<FormValues>({
-        initialValues: {
+        defaultValues: {
             servers: config.getServers(),
             app: { ...config.values.app },
             interface: { ...config.values.interface },
         },
-        validate: {
-            servers: {
-                name: (value, values, path) => {
-                    let found = false;
-                    values.servers.forEach((server, i) => {
-                        if (`servers.${i}.name` !== path && value === server.name) {
-                            found = true;
-                        }
-                    });
-                    return found ? "Server names must be unique" : null;
-                },
-                connection: {
-                    url: (value) => {
-                        try {
-                            const url = new URL(value);
-                            if (!["http:", "https:"].includes(url.protocol)) {
-                                return "Only http/https URLs are supported";
-                            }
-                        } catch {
-                            return "Invalid URL";
-                        }
-                        return null;
-                    },
-                },
-            },
-        },
-        validateInputOnChange: true,
+        mode: "onChange",
     });
 
     const [currentServerIndex, setCurrentServerIndex] = useState(-1);
-    const { setValues } = form;
+    const { reset } = form;
 
     useEffect(() => {
         if (props.opened) {
-            setValues({
+            reset({
                 servers: config.getServers(),
                 app: { ...config.values.app },
                 interface: { ...config.values.interface },
             });
             setCurrentServerIndex(config.getServers().length > 0 ? 0 : -1);
         }
-    }, [config, props.opened, setValues]);
+    }, [config, props.opened, reset]);
 
     const onSave = useCallback(() => {
-        form.validate();
-        if (form.isValid()) {
-            config.setServers(form.values.servers);
-            config.values.app = { ...config.values.app, ...form.values.app };
-            config.values.interface = { ...config.values.interface, ...form.values.interface };
+        void form.trigger().then((valid) => {
+            if (!valid) return;
+            const values = form.getValues();
+            config.setServers(values.servers);
+            config.values.app = { ...config.values.app, ...values.app };
+            config.values.interface = { ...config.values.interface, ...values.interface };
             config.cleanup();
-            props.onSave(form.values.servers);
+            props.onSave(values.servers);
             props.close();
-        }
+        });
     }, [config, form, props]);
+
+    const serverCount = form.watch("servers").length;
 
     return (
         <SaveCancelModal
@@ -411,33 +431,32 @@ export function AppSettingsModal(props: AppSettingsModalProps) {
             size="lg"
             onClose={props.close}
             onSave={onSave}
-            centered
             title="Application Settings"
         >
-            <form>
-                <Tabs mih="33rem" defaultValue="servers">
-                    <Tabs.List>
-                        <Tabs.Tab value="servers" p="lg">Servers</Tabs.Tab>
-                        <Tabs.Tab value="integrations" p="lg">Integrations</Tabs.Tab>
-                        {TAURI && <Tabs.Tab value="interface" p="lg">Interface</Tabs.Tab>}
-                    </Tabs.List>
+            <form onSubmit={(e) => { e.preventDefault(); }}>
+                <Tabs className="min-h-[33rem]" defaultValue="servers">
+                    <TabsList>
+                        <TabsTrigger value="servers" className="px-4 py-2.5">Servers</TabsTrigger>
+                        <TabsTrigger value="integrations" className="px-4 py-2.5">Integrations</TabsTrigger>
+                        {TAURI && <TabsTrigger value="interface" className="px-4 py-2.5">Interface</TabsTrigger>}
+                    </TabsList>
 
-                    <Tabs.Panel value="servers" pt="md">
-                        <Flex h="100%" gap="0.5rem" mih="28rem">
+                    <TabsContent value="servers" className="pt-2">
+                        <div className="flex h-full min-h-[28rem] gap-2">
                             <ServerListPanel form={form} current={currentServerIndex} setCurrent={setCurrentServerIndex} />
-                            {currentServerIndex === -1
+                            {currentServerIndex === -1 || currentServerIndex >= serverCount
                                 ? <></>
-                                : <ServerPanel form={form} current={currentServerIndex} />}
-                        </Flex>
-                    </Tabs.Panel>
+                                : <ServerPanel key={currentServerIndex} form={form} current={currentServerIndex} />}
+                        </div>
+                    </TabsContent>
 
-                    <Tabs.Panel value="integrations" pt="md">
+                    <TabsContent value="integrations" className="pt-2">
                         <IntegrationsPanel form={form} />
-                    </Tabs.Panel>
+                    </TabsContent>
 
-                    {TAURI && <Tabs.Panel value="interface" pt="md">
-                        <InterfaceSettigsPanel form={form} />
-                    </Tabs.Panel>}
+                    {TAURI && <TabsContent value="interface" className="pt-2">
+                        <InterfaceSettigsPanel form={form as unknown as UseFormReturn<InterfaceFormValues>} />
+                    </TabsContent>}
                 </Tabs>
             </form>
         </SaveCancelModal>

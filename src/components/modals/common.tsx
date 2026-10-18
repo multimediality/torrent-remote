@@ -17,11 +17,6 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import type { ModalProps } from "@mantine/core";
-import {
-    Button, Divider, Group, Loader, Modal, TagsInput,
-    Text, TextInput, ActionIcon, Menu, ScrollArea,
-} from "@mantine/core";
 import classes from "./common.module.css";
 import { ConfigContext, ServerConfigContext } from "config";
 import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
@@ -29,6 +24,16 @@ import { pathMapFromServer, pathMapToServer } from "trutil";
 import * as Icon from "react-bootstrap-icons";
 import { useServerSelectedTorrents, useServerTorrentData } from "rpc/torrent";
 import { useHotkeysContext } from "hotkeys";
+import { cn } from "lib/utils";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "components/ui/dialog";
+import { Button } from "components/ui/button";
+import { Loader } from "components/ui/loader";
+import { Separator } from "components/ui/separator";
+import { TextInput } from "components/ui/fields";
+import { TagsInput } from "components/ui/tags-input";
+import {
+    DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
+} from "components/ui/dropdown-menu";
 const { TAURI, dialogOpen } = await import(/* webpackChunkName: "taurishim" */"taurishim");
 
 export interface ModalState {
@@ -36,38 +41,88 @@ export interface ModalState {
     close: () => void,
 }
 
-export function HkModal(props: ModalProps) {
+export type ModalSize = "lg" | "xl";
+
+const modalSizeClasses: Record<ModalSize, string> = {
+    lg: "w-[38.75rem]",
+    xl: "w-[44rem]",
+};
+
+export interface HkModalProps extends React.PropsWithChildren {
+    opened: boolean,
+    onClose: () => void,
+    title?: React.ReactNode,
+    size?: ModalSize,
+    fullScreen?: boolean,
+    className?: string,
+    bodyClassName?: string,
+}
+
+/**
+ * Dialog that suspends the application hotkeys while it is open. The first
+ * element carrying `data-autofocus` receives focus when the dialog opens.
+ */
+export function HkModal({ opened, onClose, title, size = "lg", fullScreen = false, className, bodyClassName, children }: HkModalProps) {
     const hk = useHotkeysContext();
 
     useEffect(() => {
-        hk.active = !props.opened;
+        hk.active = !opened;
 
         return () => {
             hk.active = true;
         };
-    }, [props.opened, hk]);
+    }, [opened, hk]);
 
-    return <Modal {...props}>{props.children}</Modal>;
+    const onOpenAutoFocus = useCallback((e: Event) => {
+        const content = e.currentTarget as HTMLElement | null;
+        const target = content?.querySelector<HTMLElement>("[data-autofocus]:not([data-autofocus='false'])");
+        if (target != null) {
+            e.preventDefault();
+            target.focus();
+        }
+    }, []);
+
+    return (
+        <Dialog open={opened} onOpenChange={(open) => { if (!open) onClose(); }}>
+            <DialogContent
+                className={cn(
+                    "max-h-[calc(100vh-2rem)]",
+                    modalSizeClasses[size],
+                    fullScreen && "top-0 left-0 h-screen max-h-none w-screen max-w-none translate-x-0 translate-y-0 rounded-none border-0",
+                    className,
+                )}
+                onOpenAutoFocus={onOpenAutoFocus}
+            >
+                <DialogHeader>
+                    <DialogTitle className={title === undefined ? "sr-only" : undefined}>
+                        {title ?? "Dialog"}
+                    </DialogTitle>
+                </DialogHeader>
+                <div className={cn("flex min-h-0 flex-col overflow-y-auto px-3 pb-3", bodyClassName)}>
+                    {children}
+                </div>
+            </DialogContent>
+        </Dialog>
+    );
 }
 
-interface SaveCancelModalProps extends ModalProps {
+interface SaveCancelModalProps extends HkModalProps {
     onSave: () => void,
-    onClose: () => void,
     saveLoading?: boolean,
 }
 
 export function SaveCancelModal({ onSave, onClose, children, saveLoading, ...other }: SaveCancelModalProps) {
     return (
         <HkModal onClose={onClose} {...other}>
-            <Divider my="sm" />
+            <Separator className="my-1.5" />
             {children}
-            <Divider my="sm" />
-            <Group justify="center" gap="md">
-                <Button onClick={onSave} variant="filled" data-autofocus>
-                    {saveLoading === true ? <Loader size="1rem" /> : "Save"}
+            <Separator className="my-1.5" />
+            <div className="flex justify-center gap-2">
+                <Button onClick={onSave} data-autofocus>
+                    {saveLoading === true ? <Loader size="1rem" color="currentColor" /> : "Save"}
                 </Button>
                 <Button onClick={onClose} variant="light">Cancel</Button>
-            </Group>
+            </div>
         </HkModal>
     );
 }
@@ -77,16 +132,13 @@ export function LimitedNamesList({ names, limit }: { names: string[], limit?: nu
     const t = names.slice(0, limit);
 
     return <>
-        {t.map((s, i) => <Text
+        {t.map((s, i) => <div
             key={i}
-            mx="md"
-            my="xs"
-            px="sm"
-            className={classes.limitedNamesText}
+            className={`mx-2 my-1 px-1.5 ${classes.limitedNamesText}`}
         >
             {s}
-        </Text>)}
-        {names.length > limit && <Text mx="xl" mb="md">{`... and ${names.length - limit} more`}</Text>}
+        </div>)}
+        {names.length > limit && <div className="mx-4 mb-2">{`... and ${names.length - limit} more`}</div>}
     </>;
 }
 
@@ -176,26 +228,21 @@ export function TorrentLocation(props: LocationData) {
     const config = useContext(ConfigContext);
 
     return (
-        <Group align="flex-end">
+        <div className="flex items-end gap-2">
             <TextInput
                 value={props.path}
                 label={props.inputLabel}
                 disabled={props.disabled}
                 onChange={(e) => { props.setPath(e.currentTarget.value); }}
-                style={{ flexGrow: 1 }}
+                wrapperClassName="flex-grow"
                 data-autofocus={props.focusPath}
                 rightSection={
-                    <Menu
-                        position="left-start"
-                        withinPortal
-                        returnFocus
-                        middlewares={{ shift: true, flip: false }}
-                        offset={{ mainAxis: -20, crossAxis: 30 }}
-                    >
-                        <Menu.Target>
-                            <ActionIcon
-                                variant="subtle"
-                                py="md"
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button
+                                variant="ghost"
+                                size="icon-sm"
+                                title="Recent directories"
                                 disabled={
                                     props.disabled === true
                                     || (props.lastPaths.length === 0
@@ -203,48 +250,40 @@ export function TorrentLocation(props: LocationData) {
                                 }
                             >
                                 <Icon.ClockHistory size="16" />
-                            </ActionIcon>
-                        </Menu.Target>
-                        <Menu.Dropdown>
-                            <ScrollArea.Autosize
-                                type="auto"
-                                mah="calc(100vh - 0.5rem)"
-                                miw="35rem"
-                                offsetScrollbars
-                                styles={{ viewport: { paddingBottom: 0 } }}
-                            >
-                                {config.values.interface.preconfiguredDirs.map((path) => (
-                                    <Menu.Item key={path} onClick={() => { props.setPath(path); }}>
-                                        {path}
-                                    </Menu.Item>
-                                ))}
-                                {config.values.interface.preconfiguredDirs.length > 0 && props.lastPaths.length > 0
-                                    && <Menu.Divider />}
-                                {props.lastPaths.map((path) => (
-                                    <Menu.Item
-                                        key={path}
-                                        onClick={() => { props.setPath(path); }}
-                                        rightSection={
-                                            <ActionIcon
-                                                variant="subtle"
-                                                component="div"
-                                                title="Remove path"
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    props.removePath(path);
-                                                }}
-                                                className="list-delete-icon"
-                                            >
-                                                <Icon.Trash size="12" />
-                                            </ActionIcon>
-                                        }
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent
+                            align="end"
+                            className="max-h-[calc(100vh-0.5rem)] min-w-[35rem] max-w-[calc(100vw-2rem)]"
+                        >
+                            {config.values.interface.preconfiguredDirs.map((path) => (
+                                <DropdownMenuItem key={path} onClick={() => { props.setPath(path); }}>
+                                    {path}
+                                </DropdownMenuItem>
+                            ))}
+                            {config.values.interface.preconfiguredDirs.length > 0 && props.lastPaths.length > 0
+                                && <DropdownMenuSeparator />}
+                            {props.lastPaths.map((path) => (
+                                <DropdownMenuItem
+                                    key={path}
+                                    onClick={() => { props.setPath(path); }}
+                                >
+                                    <span className="flex-grow">{path.length > 0 ? path : "<empty>"}</span>
+                                    <span
+                                        role="button"
+                                        title="Remove path"
+                                        className="list-delete-icon ml-2 items-center rounded-sm p-1 hover:bg-accent-foreground/15"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            props.removePath(path);
+                                        }}
                                     >
-                                        {path.length > 0 ? path : "<empty>"}
-                                    </Menu.Item>
-                                ))}
-                            </ScrollArea.Autosize>
-                        </Menu.Dropdown>
-                    </Menu>
+                                        <Icon.Trash size="12" />
+                                    </span>
+                                </DropdownMenuItem>
+                            ))}
+                        </DropdownMenuContent>
+                    </DropdownMenu>
                 }
                 autoComplete="off"
                 autoCorrect="off"
@@ -252,7 +291,7 @@ export function TorrentLocation(props: LocationData) {
                 spellCheck="false"
             />
             {TAURI && <Button onClick={props.browseHandler} disabled={props.disabled}>Browse</Button>}
-        </Group>
+        </div>
     );
 }
 

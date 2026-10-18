@@ -30,6 +30,7 @@ import type { AccessorFn, CellContext } from "@tanstack/table-core";
 import type { TableSelectReducer, TrguiTableFeatures } from "./common";
 import { EditableNameField, TrguiTable } from "./common";
 import { ConfigContext, ServerConfigContext } from "config";
+import type { TablePosition } from "config";
 import { StatusIconMap, Error as StatusIconError, Magnetizing, CompletedStopped } from "components/statusicons";
 import { useMutateTorrentPath, useSession, useTorrentAction } from "queries";
 import { notifications } from "notifications";
@@ -507,6 +508,14 @@ export function TorrentTable(props: {
 
     const [info, setInfo, handler] = useContextMenu();
 
+    const config = useContext(ConfigContext);
+    const position = useMemo(() => ({
+        initial: config.getTorrentListPosition(serverConfig.name),
+        onChange: (p: TablePosition) => {
+            config.setTorrentListPosition(serverConfig.name, p);
+        },
+    }), [config, serverConfig.name]);
+
     return (
         <div className="h-full w-full" onContextMenu={handler}>
             <MemoizedTorrentContextMenu
@@ -526,6 +535,7 @@ export function TorrentTable(props: {
                 onVisibilityChange,
                 onRowDoubleClick,
                 scrollToRow: props.scrollToRow,
+                position,
             }}
             />
         </div>

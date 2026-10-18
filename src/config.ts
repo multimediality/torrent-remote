@@ -39,6 +39,16 @@ export interface PathMapping {
     to: string,
 }
 
+/**
+ * Where the torrent list was scrolled to, kept by meaning rather than pixels
+ * because the list changes between sessions: either "at the bottom" or the
+ * torrent shown as the top row.
+ */
+export interface TablePosition {
+    atBottom: boolean,
+    topRowId?: string,
+}
+
 export interface ServerConfig {
     name: string,
     connection: ServerConnection,
@@ -51,6 +61,7 @@ export interface ServerConfig {
         torrentsMinimized: number,
         details: number,
     },
+    torrentListPosition?: TablePosition,
 }
 
 export interface SortByConfig {
@@ -429,6 +440,15 @@ export class Config {
 
     getServer(name: string | undefined): ServerConfig | undefined {
         return this.values.servers.find((s) => s.name === name);
+    }
+
+    getTorrentListPosition(serverName: string): TablePosition | undefined {
+        return this.getServer(serverName)?.torrentListPosition;
+    }
+
+    setTorrentListPosition(serverName: string, position: TablePosition) {
+        const server = this.getServer(serverName);
+        if (server !== undefined) server.torrentListPosition = position;
     }
 
     getOpenTabs() {

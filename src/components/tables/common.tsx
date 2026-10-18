@@ -35,7 +35,7 @@ import { useVirtualizer } from "@tanstack/react-virtual";
 import { ContextMenu, MenuItem, MenuSpacer, useContextMenu } from "components/contextmenu";
 import { Button } from "components/ui/button";
 import { Input } from "components/ui/input";
-import type { TableName } from "config";
+import type { TableName, TablePosition } from "config";
 import { ConfigContext } from "config";
 import React, { memo, useReducer, useCallback, useContext, useEffect, useMemo, useRef, useState, useLayoutEffect } from "react";
 import type { DropResult } from "@hello-pangea/dnd";
@@ -555,6 +555,11 @@ export function TrguiTable<TData extends RowData>(props: {
     onRowDoubleClick?: (row: TData) => void,
     onVisibilityChange?: React.Dispatch<ColumnVisibilityState>,
     scrollToRow?: { id: string },
+    /** restore this position once rows are loaded, and report scrolling back */
+    position?: {
+        initial: TablePosition | undefined,
+        onChange: (position: TablePosition) => void,
+    },
 }) {
     const [table, columnVisibility, setColumnVisibility, columnOrder, setColumnOrder, columnSizing, sorting, rowsWithSelectedDescendants] =
         useTable(props.tablename, props.columns, props.data, props.selected, props.getRowId, props.getSubRows, props.onVisibilityChange);
@@ -586,6 +591,47 @@ export function TrguiTable<TData extends RowData>(props: {
     const headerRef = useRef<HTMLElement | null>(null);
     const [parentRefProxy, headerRefProxy, syncHeaderScroll] = useSynchronizedScroll(parentRef, headerRef);
 
+    // Remembered position: restored once, the first time rows are present,
+    // then kept up to date (debounced) as the user scrolls.
+    const rowCount = table.getRowModel().rows.length;
+    const positionRestored = useRef(false);
+    const initialPosition = props.position?.initial;
+    useEffect(() => {
+        if (positionRestored.current || rowCount === 0) return;
+        positionRestored.current = true;
+        if (initialPosition === undefined) return;
+        if (initialPosition.atBottom) {
+            virtualizer.scrollToIndex(rowCount - 1, { align: "end" });
+        } else if (initialPosition.topRowId !== undefined) {
+            const index = table.getRowModel().rows.findIndex(
+                (row) => props.getRowId(row.original) === initialPosition.topRowId);
+            if (index >= 0) virtualizer.scrollToIndex(index, { align: "start" });
+        }
+    }, [rowCount, initialPosition, virtualizer, table, props]);
+
+    const positionTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+    const onPositionChange = props.position?.onChange;
+    const reportPosition = useCallback(() => {
+        const el = parentRef.current;
+        if (el === null || onPositionChange === undefined || !positionRestored.current) return;
+        clearTimeout(positionTimer.current);
+        positionTimer.current = setTimeout(() => {
+            const rows = table.getRowModel().rows;
+            if (rows.length === 0) return;
+            const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - rowHeight / 2;
+            const top = rows[Math.min(rows.length - 1, Math.floor(el.scrollTop / rowHeight))];
+            onPositionChange({ atBottom, topRowId: props.getRowId(top.original) });
+        }, 300);
+    }, [parentRef, onPositionChange, table, rowHeight, props]);
+    useEffect(() => () => {
+        clearTimeout(positionTimer.current);
+    }, []);
+
+    const onRowsScroll = useCallback(() => {
+        syncHeaderScroll();
+        reportPosition();
+    }, [syncHeaderScroll, reportPosition]);
+
     return (
         <div className="torrent-table-container">
             <div
@@ -616,7 +662,7 @@ export function TrguiTable<TData extends RowData>(props: {
             <div
                 ref={parentRefProxy}
                 className="torrent-table-rows"
-                onScroll={syncHeaderScroll}
+                onScroll={onRowsScroll}
                 tabIndex={-1}
             >
                 <div

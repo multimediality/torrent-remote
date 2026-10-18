@@ -144,12 +144,16 @@ jobs:
         id: download
         with:
           path: artifacts
+      # Both mac builds produce "Torrent Remote.app.tar.gz" (+ .sig); give them
+      # distinct names. The files are searched because the artifacts keep
+      # different folder layouts (the .sig upload is a glob, the archive is not).
       - name: Rename mac app archives
         run: |
-          mv "artifacts/x86_64-apple-darwin/Torrent Remote.app.tar.gz" artifacts/x86_64-apple-darwin/TorrentRemote_x86_64.app.tar.gz
-          mv "artifacts/aarch64-apple-darwin/Torrent Remote.app.tar.gz" artifacts/aarch64-apple-darwin/TorrentRemote_aarch64.app.tar.gz
-          mv "artifacts/x86_64-apple-darwin-sig/Torrent Remote.app.tar.gz.sig" artifacts/x86_64-apple-darwin-sig/TorrentRemote_x86_64.app.tar.gz.sig
-          mv "artifacts/aarch64-apple-darwin-sig/Torrent Remote.app.tar.gz.sig" artifacts/aarch64-apple-darwin-sig/TorrentRemote_aarch64.app.tar.gz.sig
+          for arch in x86_64 aarch64; do
+            find artifacts -path "*/${arch}-apple-darwin*" -name "Torrent Remote.app.tar.gz*" -print0               | while IFS= read -r -d "" f; do
+                  mv -v "$f" "$(dirname "$f")/$(basename "$f" | sed "s/^Torrent Remote\.app/TorrentRemote_${arch}.app/")"
+                done
+          done
       - name: Downloaded artifacts
         run: ls -lhR artifacts/
 

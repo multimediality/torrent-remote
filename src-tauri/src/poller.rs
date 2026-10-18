@@ -24,6 +24,7 @@ use tauri::{
 };
 
 use crate::torrentcache::process_response;
+use crate::tray::{self, TrayState};
 
 #[derive(Deserialize, Debug, Clone, PartialEq)]
 #[serde(rename_all = "camelCase")]
@@ -121,15 +122,25 @@ async fn polling_task(app: AppHandle, name: String, toast: bool, sound: bool) {
         let result = poll(&app.clone(), connection.clone(), session, toast, sound).await;
         let mut new_session = None;
 
-        match result {
-            Ok(_) => {}
+        let connected = match result {
+            Ok(_) => true,
             Err(Some(session)) => {
                 // try again with new session token
-                if (poll(&app, connection, Some(session.clone()), toast, sound).await).is_ok() {
+                let ok = (poll(&app, connection, Some(session.clone()), toast, sound).await).is_ok();
+                if ok {
                     new_session = Some(session);
                 }
+                ok
             }
-            Err(None) => {}
+            Err(None) => false,
+        };
+        // While the window is open the frontend owns the tray state for the
+        // server it shows; the poller only reports for a hidden window.
+        if main_window_hidden(&app) {
+            tray::set_tray_state(
+                &app,
+                if connected { TrayState::Idle } else { TrayState::Disconnected },
+            );
         }
         if let Some(session) = new_session {
             // Reaquire lock to write session token
@@ -138,6 +149,11 @@ async fn polling_task(app: AppHandle, name: String, toast: bool, sound: bool) {
             data.transmission_session = Some(session);
         };
     }
+}
+
+fn main_window_hidden(app: &AppHandle) -> bool {
+    app.get_webview_window("main")
+        .is_none_or(|w| !w.is_visible().unwrap_or(false))
 }
 
 const TRANSMISSION_SESSION: &str = "X-Transmission-Session-Id";

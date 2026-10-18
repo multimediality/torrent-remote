@@ -32,12 +32,15 @@ import { TorrentTable, useInitialTorrentRequiredFields } from "./tables/torrentt
 import { MemoizedToolbar } from "./toolbar";
 import { useSession, useTorrentList } from "queries";
 import type { TorrentFieldsType } from "rpc/transmission";
+import { Status } from "rpc/transmission";
 import type { ModalCallbacks } from "./modals/servermodals";
 import { MemoizedServerModals } from "./modals/servermodals";
 import { useAppHotkeys, useHotkeysContext } from "hotkeys";
 import { SplitLayout } from "./splitlayout";
 import { useDisclosure, useToggle } from "@mantine/hooks";
 import type { ServerTabsRef } from "./servertabs";
+
+const { TAURI, appWindow, invoke } = await import(/* webpackChunkName: "taurishim" */"taurishim");
 
 function currentFiltersReducer(
     oldFilters: TorrentFilter[],
@@ -145,7 +148,7 @@ export function Server({ hostname, tabsRef, toolbarExtra, toggleTabStrip }: Serv
         isError: sessionIsError,
         error: sessionError,
     } = useSession(updates);
-    const { data: torrents } = useTorrentList(updates, tableRequiredFields);
+    const { data: torrents, isError: torrentsIsError } = useTorrentList(updates, tableRequiredFields);
 
     const [currentTorrent, setCurrentTorrentInt] = useState<number>();
     const setCurrentTorrent = useCallback(
@@ -184,6 +187,27 @@ export function Server({ hostname, tabsRef, toolbarExtra, toggleTabStrip }: Serv
     const rpcVersion = session?.["rpc-version"] as number ?? 0;
 
     const overlayVisible = sessionIsError || sessionIsLoading || rpcVersion < 14;
+
+    // Mirror the connection state onto the tray icon (see tray.rs). The effect
+    // only fires when the state changes, and again when the window is shown
+    // because the background poller owns the tray while it is hidden.
+    const trayState = overlayVisible || torrentsIsError
+        ? "disconnected"
+        : torrents?.some((t) => t.status === Status.downloading || t.status === Status.seeding) === true
+            ? "active"
+            : "idle";
+    useEffect(() => {
+        if (!TAURI) return;
+        void invoke("set_tray_state", { state: trayState });
+        const unlisten = appWindow.listen("window-shown", () => {
+            void invoke("set_tray_state", { state: trayState });
+        });
+        return () => {
+            unlisten
+                .then((unlisten) => { unlisten(); })
+                .catch(() => { });
+        };
+    }, [trayState]);
 
     const serverData = useMemo(() => ({
         torrents: torrents ?? [],

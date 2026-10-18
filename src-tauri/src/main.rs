@@ -281,6 +281,7 @@ fn main() {
             commands::pass_to_window,
             commands::list_system_fonts,
             commands::create_tray,
+            commands::set_tray_state,
             commands::save_text_file,
             commands::load_text_file,
             commands::process_torrents,

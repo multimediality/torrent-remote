@@ -332,6 +332,12 @@ pub fn create_tray(app_handle: tauri::AppHandle) {
 }
 
 #[tauri::command]
+pub fn set_tray_state(app_handle: tauri::AppHandle, state: String) -> Result<(), String> {
+    tray::set_tray_state(&app_handle, state.parse()?);
+    Ok(())
+}
+
+#[tauri::command]
 pub async fn save_text_file(contents: String, path: String) -> Result<(), String> {
     fs::write(path, contents).map_err(|e| format!("Unable to write file: {e}"))
 }

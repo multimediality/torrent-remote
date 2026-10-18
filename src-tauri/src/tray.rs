@@ -47,12 +47,85 @@ fn tray_icon() -> tauri::image::Image<'static> {
     }
 }
 
+/// What the tray glyph should say about the active server connection.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum TrayState {
+    /// Connected, nothing downloading or seeding: the plain platform glyph.
+    Idle,
+    /// Connected and at least one transfer running: coloured centre node.
+    Active,
+    /// The server cannot be reached: greyed glyph.
+    Disconnected,
+}
+
+impl std::str::FromStr for TrayState {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "idle" => Ok(TrayState::Idle),
+            "active" => Ok(TrayState::Active),
+            "disconnected" => Ok(TrayState::Disconnected),
+            other => Err(format!("Unknown tray state: {other}")),
+        }
+    }
+}
+
+/// Same size convention as `tray_icon`: 44 px on macOS, 32 px elsewhere.
+fn tray_state_icon(state: TrayState) -> tauri::image::Image<'static> {
+    match state {
+        TrayState::Idle => tray_icon(),
+        #[cfg(target_os = "macos")]
+        TrayState::Active => tauri::include_image!("icons/tray/tray-active-44.png"),
+        #[cfg(not(target_os = "macos"))]
+        TrayState::Active => tauri::include_image!("icons/tray/tray-active-32.png"),
+        #[cfg(target_os = "macos")]
+        TrayState::Disconnected => tauri::include_image!("icons/tray/tray-disconnected-44.png"),
+        #[cfg(not(target_os = "macos"))]
+        TrayState::Disconnected => tauri::include_image!("icons/tray/tray-disconnected-32.png"),
+    }
+}
+
+static TRAY_STATE: Mutex<TrayState> = Mutex::new(TrayState::Idle);
+
+/// Swaps the tray glyph to match `state`. A no-op when the state is unchanged,
+/// so callers may report it on every poll.
+pub fn set_tray_state(app: &AppHandle, state: TrayState) {
+    {
+        // Not held across the tray calls below: those block on the main
+        // thread, which may itself be inside this function for a command.
+        let mut current = TRAY_STATE.lock().unwrap();
+        if *current == state {
+            return;
+        }
+        *current = state;
+    }
+    if let Some(tray) = app.tray_by_id(TRAY_ID) {
+        // The active glyph is coloured, which a macOS template image cannot
+        // be: the system would flatten it to a mask. Leave template mode
+        // before showing it and return to it afterwards. The other two glyphs
+        // are flat and stay template images so the menu bar can recolour them.
+        #[cfg(target_os = "macos")]
+        if state == TrayState::Active {
+            tray.set_icon_as_template(false).ok();
+        }
+        tray.set_icon(Some(tray_state_icon(state))).ok();
+        #[cfg(target_os = "macos")]
+        if state != TrayState::Active {
+            tray.set_icon_as_template(true).ok();
+        }
+    }
+}
+
 pub fn create_tray(app: AppHandle) {
     let menu = create_menu(&app, "Hide");
 
+    // The tray can be created after the frontend has already reported a
+    // state (tray icon enabled in settings), so start from that state.
+    let state = *TRAY_STATE.lock().unwrap();
     let builder = TrayIconBuilder::with_id(TRAY_ID)
-        .icon(tray_icon())
-        .icon_as_template(true)
+        .icon(tray_state_icon(state))
+        .icon_as_template(state != TrayState::Active)
         .tooltip("Torrent Remote")
         .menu(&menu)
         .show_menu_on_left_click(false)

@@ -41,7 +41,9 @@ function SegmentedControl({ data, value, onChange, disabled, color, className }:
                         disabled={disabled}
                         onClick={() => { onChange(item.value); }}
                         className={cn(
-                            "rounded-sm px-3 py-1 font-medium whitespace-nowrap transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
+                            // no colour transition: fading the old segment out while the new
+                            // one fades in reads as the selection sliding back for a moment
+                            "rounded-sm px-3 py-1 font-medium whitespace-nowrap outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
                             active
                                 ? "bg-primary text-white shadow-sm"
                                 : "text-muted-foreground hover:text-foreground",

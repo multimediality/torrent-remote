@@ -115,6 +115,23 @@ function normalizePath(path: string) {
     return path.replace(/\\/g, "/");
 }
 
+declare const process: { env: { NODE_ENV?: string } };
+
+/**
+ * Hides the webview's own context menu (Back, Refresh, Print, Inspect...) in
+ * release builds. The app draws its own menus where it has them. Text fields
+ * keep the native menu for copy and paste. Dev builds keep it everywhere so
+ * Inspect stays reachable.
+ */
+export function suppressNativeContextMenu() {
+    if (process.env.NODE_ENV !== "production") return;
+    document.addEventListener("contextmenu", (e) => {
+        const target = e.target as HTMLElement | null;
+        if (target?.closest("input, textarea, [contenteditable=\"true\"]") != null) return;
+        e.preventDefault();
+    });
+}
+
 export function pathMapFromServer(path: string, config: ServerConfig) {
     let mappedPath = path;
     const normalizedPath = normalizePath(path);

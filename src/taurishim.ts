@@ -81,7 +81,8 @@ export async function makeCreateTorrentView() {
             url: "createtorrent.html",
             width: 550,
             height: 730,
-            visible: true,
+            // shown by the create torrent page once it has painted, see src/createtorrent.tsx
+            visible: false,
             center: true,
             maximizable: false,
             title: "Create torrent",

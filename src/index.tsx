@@ -18,6 +18,7 @@
  */
 
 import "css/loader.css";
+import { suppressNativeContextMenu } from "trutil";
 import { Config, ConfigContext } from "./config";
 import { createRoot } from "react-dom/client";
 import type { Root } from "react-dom/client";
@@ -132,6 +133,7 @@ async function run(config: Config) {
     const app = createRoot(appnode);
 
     if (TAURI) {
+        suppressNativeContextMenu();
         setupTauriEvents(config, app);
 
         if (config.values.app.showTrayIcon) {

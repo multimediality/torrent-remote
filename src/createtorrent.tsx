@@ -17,20 +17,33 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import React, { lazy, Suspense } from "react";
+import React, { lazy, Suspense, useEffect } from "react";
 import "@mantine/core/styles.css";
 import { createRoot } from "react-dom/client";
+import { suppressNativeContextMenu } from "trutil";
+const { appWindow } = await import(/* webpackChunkName: "taurishim" */"taurishim");
 
 const CreateTorrentForm = lazy(async () => await import(/* webpackChunkName: "createtorrentform" */ "components/createtorrentform"));
 const CustomMantineProvider = lazy(
     async () => await import("components/mantinetheme"));
 
-async function run() {
+// The window is created hidden (see makeCreateTorrentView), reveal it once
+// React has painted something so the user never sees a blank window.
+function RevealWindow() {
+    useEffect(() => {
+        void appWindow.show().then(async () => await appWindow.setFocus());
+    }, []);
+    return null;
+}
+
+function run() {
+    suppressNativeContextMenu();
     const appnode = document.getElementById("app") as HTMLElement;
     const app = createRoot(appnode);
 
     app.render(
         <React.StrictMode>
+            <RevealWindow />
             <Suspense fallback={<div />}>
                 <CustomMantineProvider>
                     <CreateTorrentForm />
@@ -40,4 +53,9 @@ async function run() {
     );
 }
 
-window.onload = run;
+// the await above can outlast the page load, so do not rely on the load event
+if (document.readyState === "complete") {
+    run();
+} else {
+    window.addEventListener("load", run);
+}

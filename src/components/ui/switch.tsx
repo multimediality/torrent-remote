@@ -41,10 +41,12 @@ function Switch({
             <SwitchPrimitive.Thumb
                 data-slot="switch-thumb"
                 className={cn(
-                    "pointer-events-none block rounded-full bg-white shadow-sm ring-0 transition-transform data-[state=unchecked]:translate-x-0.5",
+                    "pointer-events-none block rounded-full bg-white shadow-sm ring-0",
                     size === "default"
-                        ? "size-4 data-[state=checked]:translate-x-[calc(100%+0.1rem)]"
-                        : "size-5 data-[state=checked]:translate-x-[var(--switch-travel,calc(100%+0.1rem))]",
+                        ? "size-4 transition-transform data-[state=unchecked]:translate-x-0.5 data-[state=checked]:translate-x-[calc(100%+0.1rem)]"
+                        // the large track stretches to its column, so the thumb is
+                        // positioned against the track edges instead of translated
+                        : "absolute top-1/2 size-5 -translate-y-1/2 transition-[left] data-[state=unchecked]:left-0.5 data-[state=checked]:left-[calc(100%-1.375rem)]",
                 )}
             />
         </SwitchPrimitive.Root>

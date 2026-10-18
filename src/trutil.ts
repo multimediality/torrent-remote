@@ -129,9 +129,12 @@ export function pathMapFromServer(path: string, config: ServerConfig) {
 
 export function pathMapToServer(path: string, config: ServerConfig) {
     let mappedPath = path;
-    const normalizedPath = normalizePath(path);
+    // Local paths are compared case-insensitively: Windows drive letters and
+    // share names are case-insensitive and file pickers do not always return
+    // the case the mapping was typed with, which left the local path unmapped.
+    const normalizedPath = normalizePath(path).toLowerCase();
     for (const mapping of config.pathMappings) {
-        if (mapping.to.length > 0 && normalizedPath.startsWith(normalizePath(mapping.to))) {
+        if (mapping.to.length > 0 && normalizedPath.startsWith(normalizePath(mapping.to).toLowerCase())) {
             mappedPath = mapping.from + mappedPath.substring(mapping.to.length);
             break;
         }

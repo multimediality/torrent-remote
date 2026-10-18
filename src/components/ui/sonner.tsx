@@ -49,6 +49,10 @@ const Toaster = ({ ...props }: ToasterProps) => {
                     "--info-text": "var(--popover-foreground)",
                     "--info-border": "var(--border)",
                     "--border-radius": "4px",
+                    // close button on the upper right corner (sonner's default is upper left)
+                    "--toast-close-button-start": "unset",
+                    "--toast-close-button-end": "0",
+                    "--toast-close-button-transform": "translate(35%, -35%)",
                 } as React.CSSProperties
             }
             {...props}

@@ -3,6 +3,11 @@
 
 ![Lint status](https://img.shields.io/github/actions/workflow/status/scdemanett/torrent-remote/lint.yml?label=Lint&event=push)
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/logo/mark-on-dark.svg">
+  <img src="docs/logo/mark-on-light.svg" alt="Torrent Remote logo" width="160">
+</picture>
+
 `Torrent Remote` is a fork of [TrguiNG](https://github.com/openscopeproject/TrguiNG)
 by qu1ck, itself a rewrite of the [transgui](https://github.com/transmission-remote-gui/transgui)
 project using [tauri](https://tauri.app).

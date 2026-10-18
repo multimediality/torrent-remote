@@ -31,11 +31,28 @@ use crate::window_state_flags;
 
 pub const TRAY_ID: &str = "tray";
 
+/// The tray uses a flat monochrome glyph rather than the full-colour app
+/// tile. On macOS it is a black template image, which the system recolours
+/// for light and dark menu bars and for the highlighted state, so the 44 px
+/// file is a 2x menu bar asset. Windows and Linux have no template concept
+/// and default to dark taskbars, so they get the white glyph.
+fn tray_icon() -> tauri::image::Image<'static> {
+    #[cfg(target_os = "macos")]
+    {
+        tauri::include_image!("icons/tray/tray-black-44.png")
+    }
+    #[cfg(not(target_os = "macos"))]
+    {
+        tauri::include_image!("icons/tray/tray-white-32.png")
+    }
+}
+
 pub fn create_tray(app: AppHandle) {
     let menu = create_menu(&app, "Hide");
 
     let builder = TrayIconBuilder::with_id(TRAY_ID)
-        .icon(app.default_window_icon().unwrap().clone())
+        .icon(tray_icon())
+        .icon_as_template(true)
         .tooltip("Torrent Remote")
         .menu(&menu)
         .show_menu_on_left_click(false)

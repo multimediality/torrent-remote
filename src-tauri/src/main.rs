@@ -187,6 +187,13 @@ fn setup(app: &mut App) -> Result<(), Box<dyn std::error::Error>> {
             let _ = app_clone.save_window_state(window_state_flags());
             tray::set_tray_showhide_text(&app_clone, "Show");
         });
+
+        // The frontend shows the window itself when a torrent arrives while
+        // it is hidden (file drop, command line), keep the tray menu in sync.
+        let app_clone = app.clone();
+        app.listen("window-shown", move |_| {
+            tray::set_tray_showhide_text(&app_clone, "Hide");
+        });
     });
 
     Ok(())
@@ -239,6 +246,9 @@ fn main() {
             if args.is_empty() {
                 match app.get_webview_window("main") {
                     Some(window) if window.is_visible().unwrap_or(false) => {
+                        if window.is_minimized().unwrap_or(false) {
+                            window.unminimize().ok();
+                        }
                         window.set_focus().ok();
                     }
                     window => tray::toggle_main_window(app, window),

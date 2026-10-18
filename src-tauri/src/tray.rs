@@ -169,7 +169,11 @@ async fn close_main(window: WebviewWindow) {
         }
     });
     window.emit("exit-requested", ()).ok();
-    rx.await.ok();
+    // A frontend that never answers (crashed webview) must not keep the
+    // window open or block quitting forever.
+    if tokio::time::timeout(Duration::from_secs(5), rx).await.is_err() {
+        log::warn!("Frontend did not confirm exit-requested within 5s, closing anyway");
+    }
     // destroy() skips the close-requested event the plugin saves on
     let _ = window.app_handle().save_window_state(window_state_flags());
     window.destroy().ok();

@@ -40,7 +40,23 @@ const versionInfo = `{
 console.log(versionInfo);
 
 await mkdir(path.join(__dirname, "src/build/"), { recursive: true });
-await writeFile(path.resolve(path.join(__dirname, "src/build/version.json")), versionInfo);
+const versionFile = path.resolve(path.join(__dirname, "src/build/version.json"));
+// The dev server watches src/, so rewriting version.json on every start
+// triggers an immediate recompile that renames the chunks under the page the
+// Tauri window is loading. Keep the existing file when only the date changed.
+const devServer = process.argv.includes("serve");
+let keepVersionFile = false;
+if (devServer) {
+    try {
+        const existing = JSON.parse(await readFile(versionFile, "utf8"));
+        keepVersionFile = existing.gitVersion === gitVersion && existing.backendVersion === tauriConf.version;
+    } catch {
+        keepVersionFile = false;
+    }
+}
+if (!keepVersionFile) {
+    await writeFile(versionFile, versionInfo);
+}
 
 export default (mode) => ({
     mode,

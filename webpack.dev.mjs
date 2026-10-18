@@ -21,6 +21,12 @@ import { merge } from "webpack-merge";
 import common from "./webpack.common.mjs";
 
 export default merge(common("development"), {
+    // no content hashes in dev: the dev server only serves the latest compile,
+    // so a page from an earlier compile must still find its lazy chunks
+    output: {
+        filename: "[name].bundle.js",
+        chunkFilename: "[name].bundle.js",
+    },
     devtool: "source-map",
     devServer: {
         port: 8787,

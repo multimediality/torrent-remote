@@ -96,30 +96,18 @@ jobs:
           name: ${{ matrix.platform.rust_target }}-sig
           path: src-tauri/target/${{ matrix.platform.rust_target }}/release/bundle/**/*.sig
 
-      - name: Prepare artifact paths
-        if: matrix.platform.os == 'macos-latest'
-        id: prepare_outputs
-        run: |
-          # join the tauri action output into a newline-separated string
-          ARTIFACTS_RAW="${{ join(fromJSON(steps.tauri_build.outputs.artifactPaths), '\n') }}"
-          # append .tar.gz to each non-empty line and produce a JSON array
-          ARTIFACT_JSON=$(printf '%s' "$ARTIFACTS_RAW" | jq -R -s -c 'split("\n") | map(select(length > 0) | . + ".tar.gz")')
-          echo Outputs:
-          echo "$ARTIFACT_JSON"
-          echo "ARTIFACT_PATHS=${ARTIFACT_JSON}" >> $GITHUB_OUTPUT
-
       - name: Git status and version
         run: |
           git status
           git describe --tags --dirty --always
           git diff
 
-      # The artifacts output can now be used to upload the artifacts
+      # macOS: the updater archive (the .app itself is a directory, the .sig is uploaded above)
       - uses: actions/upload-artifact@v6
         if: matrix.platform.os == 'macos-latest'
         with:
           name: ${{ matrix.platform.rust_target }}
-          path: "${{ join(fromJSON(steps.prepare_outputs.outputs.ARTIFACT_PATHS), '\n') }}"
+          path: src-tauri/target/${{ matrix.platform.rust_target }}/release/bundle/macos/*.app.tar.gz
 
       - uses: actions/upload-artifact@v6
         if: matrix.platform.os != 'macos-latest'

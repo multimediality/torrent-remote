@@ -36,6 +36,7 @@ pub fn create_tray(app: AppHandle) {
 
     let builder = TrayIconBuilder::with_id(TRAY_ID)
         .icon(app.default_window_icon().unwrap().clone())
+        .tooltip("Torrent Remote")
         .menu(&menu)
         .show_menu_on_left_click(false)
         .on_menu_event(on_menu_event);

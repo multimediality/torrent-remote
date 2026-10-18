@@ -67,7 +67,7 @@ export function VersionModal({ opened, close }: ModalState) {
             </div>
             <Separator className="my-4" />
             <div className="flex items-center gap-2">
-                <AppLogo style={{ flexShrink: 0 }} />
+                <AppLogo width={128} height={128} style={{ flexShrink: 0 }} />
                 <div className="grid flex-grow grid-cols-12 gap-x-2 gap-y-1">
                     <div className="col-span-4">Version</div>
                     <div className="col-span-8">

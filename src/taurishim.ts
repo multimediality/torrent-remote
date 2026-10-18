@@ -21,7 +21,9 @@ import type { EventCallback } from "@tauri-apps/api/event";
 import type { CloseRequestedEvent } from "@tauri-apps/api/window";
 import type { DragDropEvent } from "@tauri-apps/api/webview";
 
-export const TAURI = Object.prototype.hasOwnProperty.call(window, "__TAURI__");
+// __TAURI_INTERNALS__ is what @tauri-apps/api itself talks to and is always
+// present in a Tauri webview, unlike the optional global API (withGlobalTauri).
+export const TAURI = Object.prototype.hasOwnProperty.call(window, "__TAURI_INTERNALS__");
 const realAppWindow = TAURI ? (await import(/* webpackMode: "lazy-once" */ "@tauri-apps/api/window")).getCurrentWindow() : undefined;
 const WebviewWindow = TAURI
     ? (await import(/* webpackMode: "lazy-once" */ "@tauri-apps/api/webviewWindow")).WebviewWindow

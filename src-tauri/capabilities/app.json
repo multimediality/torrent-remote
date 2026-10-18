@@ -1,10 +1,11 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "app",
-  "description": "Application permissions",
+  "description": "Permissions for the main window and the create torrent windows: only what the frontend calls",
   "local": true,
   "windows": [
-    "*"
+    "main",
+    "createtorrent-*"
   ],
   "platforms": [
     "macOS",
@@ -13,6 +14,13 @@
   ],
   "permissions": [
     "core:default",
+    "core:window:allow-show",
+    "core:window:allow-hide",
+    "core:window:allow-unminimize",
+    "core:window:allow-set-focus",
+    "core:window:allow-set-title",
+    "core:window:allow-destroy",
+    "core:webview:allow-create-webview-window",
     "fs:allow-read-text-file",
     "fs:allow-write-text-file",
     {
@@ -22,28 +30,8 @@
         "$CONFIG/trguing.json"
       ]
     },
-    "core:webview:allow-create-webview-window",
-    "core:window:allow-create",
-    "core:window:allow-center",
-    "core:window:allow-set-title",
-    "core:window:allow-unminimize",
-    "core:window:allow-show",
-    "core:window:allow-hide",
-    "core:window:allow-close",
-    "core:window:allow-destroy",
-    "core:window:allow-set-size",
-    "core:window:allow-set-position",
-    "core:window:allow-set-focus",
     "dialog:allow-open",
     "dialog:allow-save",
-    "dialog:allow-message",
-    "dialog:allow-ask",
-    "dialog:allow-confirm",
-    "clipboard-manager:allow-write-text",
-    "clipboard-manager:default",
-    "fs:default",
-    "dialog:default",
-    "notification:default",
-    "cli:default"
+    "clipboard-manager:allow-write-text"
   ]
 }

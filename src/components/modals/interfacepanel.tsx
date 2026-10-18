@@ -59,7 +59,8 @@ export interface InterfaceFormValues {
 }
 
 function Grid({ children }: React.PropsWithChildren) {
-    return <div className="grid grid-cols-12 items-center gap-2">{children}</div>;
+    // capped so controls stay next to their labels when the dialog is enlarged
+    return <div className="grid max-w-[48rem] grid-cols-12 items-center gap-2">{children}</div>;
 }
 
 export function InterfaceSettigsPanel({ form }: { form: UseFormReturn<InterfaceFormValues> }) {

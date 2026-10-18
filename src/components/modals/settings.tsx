@@ -303,7 +303,7 @@ function IntegrationsPanel({ form }: { form: Form }) {
     const app = form.watch("app");
 
     return (
-        <div className="grid grid-cols-12 items-center gap-2">
+        <div className="grid max-w-[48rem] grid-cols-12 items-center gap-2">
             <div className="col-span-6">Delete successfully added torrent files</div>
             <div className="col-span-2">
                 <BigSwitch

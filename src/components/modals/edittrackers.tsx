@@ -20,13 +20,15 @@
 import React, { useCallback, useContext, useEffect, useMemo } from "react";
 import type { ModalState } from "./common";
 import { SaveCancelModal, TorrentsNames } from "./common";
-import { useForm } from "@mantine/form";
+import { useForm } from "react-hook-form";
 import { useMutateTorrent, useTorrentDetails } from "queries";
-import { notifications } from "@mantine/notifications";
-import { Button, Grid, LoadingOverlay, Text, Textarea } from "@mantine/core";
+import { notifications } from "notifications";
 import { ConfigContext } from "config";
 import type { TrackerStats } from "rpc/torrent";
 import { useServerRpcVersion, useServerSelectedTorrents, useServerTorrentData } from "rpc/torrent";
+import { Button } from "components/ui/button";
+import { LoadingOverlay } from "components/ui/loader";
+import { RhfTextarea } from "components/formfields";
 
 interface FormValues {
     trackerList: string,
@@ -48,24 +50,24 @@ export function EditTrackers(props: ModalState) {
     const { data: torrent, isPending } = useTorrentDetails(
         torrentId ?? -1, torrentId !== undefined && props.opened, false, true);
 
-    const form = useForm<FormValues>({});
+    const form = useForm<FormValues>({ defaultValues: { trackerList: "" } });
 
-    const { setValues } = form;
+    const { reset } = form;
     useEffect(() => {
         if (torrent === undefined) return;
-        setValues({
+        reset({
             trackerList: rpcVersion >= 17
                 ? torrent.trackerList
                 : torrent.trackerStats.map((s: TrackerStats) => s.announce).join("\n"),
         });
-    }, [rpcVersion, setValues, torrent]);
+    }, [rpcVersion, reset, torrent]);
 
     const { mutate } = useMutateTorrent();
 
     const onSave = useCallback(() => {
         if (torrentId === undefined || torrent === undefined) return;
         const dedupedTrackers: string[] = [];
-        for (const tracker of form.values.trackerList.split("\n")) {
+        for (const tracker of form.getValues("trackerList").split("\n")) {
             if (tracker !== "" && dedupedTrackers.includes(tracker)) continue;
             if (tracker === "" && dedupedTrackers.length === 0) continue;
             if (tracker === "" && dedupedTrackers[dedupedTrackers.length - 1] === "") continue;
@@ -105,13 +107,13 @@ export function EditTrackers(props: ModalState) {
             },
         );
         props.close();
-    }, [torrentId, torrent, rpcVersion, mutate, selected, form.values, props]);
+    }, [torrentId, torrent, rpcVersion, mutate, selected, form, props]);
 
     const addDefaultTrackers = useCallback(() => {
-        let list = form.values.trackerList;
+        let list = form.getValues("trackerList");
         if (!list.endsWith("\n")) list += "\n";
         list += config.values.interface.defaultTrackers.join("\n");
-        form.setFieldValue("trackerList", list);
+        form.setValue("trackerList", list);
     }, [config, form]);
 
     return <>
@@ -121,30 +123,33 @@ export function EditTrackers(props: ModalState) {
                 size="lg"
                 onClose={props.close}
                 onSave={onSave}
-                centered
                 title="Edit torrent trackers"
-                mih="25rem"
+                bodyClassName="relative min-h-[25rem]"
             >
                 <LoadingOverlay visible={isPending} />
-                <Grid align="center">
-                    <Grid.Col>
+                <div className="grid grid-cols-12 items-center gap-2">
+                    <div className="col-span-12">
                         <TorrentsNames />
-                    </Grid.Col>
-                    <Grid.Col span={8}>
-                        <Text>Tracker list, one per line, empty line between tiers</Text>
-                    </Grid.Col>
-                    <Grid.Col span={4}>
+                    </div>
+                    <div className="col-span-8">
+                        Tracker list, one per line, empty line between tiers
+                    </div>
+                    <div className="col-span-4">
                         <Button onClick={addDefaultTrackers}>Add default list</Button>
-                    </Grid.Col>
-                    <Grid.Col>
-                        <Textarea
+                    </div>
+                    <div className="col-span-12">
+                        <RhfTextarea
+                            control={form.control}
+                            name="trackerList"
                             minRows={10}
                             maxRows={10}
-                            autosize
-                            {...form.getInputProps("trackerList")}
+                            autoComplete="off"
+                            autoCorrect="off"
+                            autoCapitalize="off"
+                            spellCheck="false"
                         />
-                    </Grid.Col>
-                </Grid>
+                    </div>
+                </div>
             </SaveCancelModal>}
     </>;
 }

@@ -20,12 +20,11 @@
 import React, { useContext, useEffect, useMemo, useState } from "react";
 import { byteRateToHumanReadableStr, bytesToHumanReadableStr } from "../trutil";
 import * as Icon from "react-bootstrap-icons";
-import { Box, Flex, Menu } from "@mantine/core";
 import type { SessionInfo } from "rpc/client";
 import type { Torrent } from "rpc/torrent";
 import { ColorSchemeToggle, ShowVersion } from "components/miscbuttons";
 import { ConfigContext, ServerConfigContext } from "config";
-import { useContextMenu } from "./contextmenu";
+import { MenuDivider, MenuItem, MenuSpacer, useContextMenu } from "./contextmenu";
 import { MemoSectionsContextMenu, getSectionsMap } from "./sectionscontextmenu";
 
 const { TAURI, appWindow } = await import(/* webpackChunkName: "taurishim" */"taurishim");
@@ -104,11 +103,9 @@ export function Statusbar({ session, torrents, filteredTorrents, selectedTorrent
     const [info, setInfo, handler] = useContextMenu();
 
     return (
-        <Flex
-            className="statusbar"
-            wrap="nowrap"
+        <div
+            className="statusbar flex flex-nowrap items-center gap-2"
             onContextMenu={handler}
-            gap="md"
         >
             <MemoSectionsContextMenu
                 sections={sections}
@@ -116,41 +113,38 @@ export function Statusbar({ session, torrents, filteredTorrents, selectedTorrent
                 contextMenuInfo={info}
                 setContextMenuInfo={setInfo}
             >
-                <Menu.Divider />
-                <Menu.Item
-                    leftSection={showGlobalSpeeds ? <Icon.Check size="1rem" /> : <Box miw="1rem" />}
-                    onMouseDown={(e) => {
-                        e.stopPropagation();
-                        setShowGlobalSpeeds(!showGlobalSpeeds);
-                    }}
+                <MenuDivider />
+                <MenuItem
+                    leftSection={showGlobalSpeeds ? <Icon.Check size="1rem" /> : <MenuSpacer />}
+                    onClick={() => { setShowGlobalSpeeds(!showGlobalSpeeds); }}
                 >
                     Show global speeds
-                </Menu.Item>
+                </MenuItem>
             </MemoSectionsContextMenu>
             {sections[sectionsMap.Connection].visible
                 && <div style={{ flex: "1 1 23%", order: sectionsMap.Connection }}>
-                    <Box component="span" my="auto" mr="xs"><Icon.Diagram2 /></Box>
+                    <span className="mr-1"><Icon.Diagram2 /></span>
                     <span>{`${session?.version as string ?? "<not connected>"} at ${hostname}`}</span>
                 </div>}
             {sections[sectionsMap["Download speed "]].visible
                 && <div style={{ flex: "1 1 15%", order: sectionsMap["Download speed "] }}>
-                    <Box component="span" my="auto" mr="xs">
+                    <span className="mr-1">
                         {showGlobalSpeeds && <Icon.Globe />}
                         <Icon.ArrowDown />
-                    </Box>
+                    </span>
                     <span>{`${downRate}/s (${byteRateToHumanReadableStr(serverFields.downRateLimit * 1024)})`}</span>
                 </div>}
             {sections[sectionsMap["Upload speed"]].visible
                 && <div style={{ flex: "1 1 15%", order: sectionsMap["Upload speed"] }}>
-                    <Box component="span" my="auto" mr="xs">
+                    <span className="mr-1">
                         {showGlobalSpeeds && <Icon.Globe />}
                         <Icon.ArrowUp />
-                    </Box>
+                    </span>
                     <span>{`${upRate}/s (${byteRateToHumanReadableStr(serverFields.upRateLimit * 1024)})`}</span>
                 </div>}
             {sections[sectionsMap["Free space"]].visible
                 && <div style={{ flex: "1 1 12%", order: sectionsMap["Free space"] }}>
-                    <Box component="span" my="auto" mr="xs"><Icon.Hdd /></Box>
+                    <span className="mr-1"><Icon.Hdd /></span>
                     <span>{`Free: ${bytesToHumanReadableStr(serverFields.free)}`}</span>
                 </div>}
             {sections[sectionsMap.Total].visible
@@ -166,6 +160,6 @@ export function Statusbar({ session, torrents, filteredTorrents, selectedTorrent
                     <ShowVersion sz="0.9rem" btn="md" />
                     <ColorSchemeToggle sz="0.9rem" btn="md" />
                 </div>}
-        </Flex>
+        </div>
     );
 }

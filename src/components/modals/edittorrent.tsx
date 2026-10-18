@@ -20,11 +20,13 @@
 import React, { useCallback, useEffect, useMemo } from "react";
 import type { ModalState } from "./common";
 import { SaveCancelModal, TorrentsNames } from "./common";
-import { useForm } from "@mantine/form";
+import { useForm } from "react-hook-form";
 import { useMutateTorrent, useTorrentDetails } from "queries";
-import { notifications } from "@mantine/notifications";
-import { Checkbox, Grid, LoadingOverlay, NumberInput } from "@mantine/core";
+import { notifications } from "notifications";
 import { useServerRpcVersion, useServerSelectedTorrents, useServerTorrentData } from "rpc/torrent";
+import { RhfCheckbox, RhfNumber } from "components/formfields";
+import { CheckboxField } from "components/ui/fields";
+import { LoadingOverlay } from "components/ui/loader";
 
 interface FormValues {
     downloadLimited?: boolean,
@@ -55,12 +57,13 @@ export function EditTorrent(props: ModalState) {
     const { data: torrent, isPending } = useTorrentDetails(
         torrentId ?? -1, torrentId !== undefined && props.opened, false, true);
 
-    const form = useForm<FormValues>({});
+    const form = useForm<FormValues>();
+    const values = form.watch();
 
-    const { setValues } = form;
+    const { reset } = form;
     useEffect(() => {
         if (torrent === undefined) return;
-        setValues({
+        reset({
             downloadLimited: torrent.downloadLimited,
             downloadLimit: torrent.downloadLimit,
             uploadLimited: torrent.uploadLimited,
@@ -73,20 +76,21 @@ export function EditTorrent(props: ModalState) {
             honorsSessionLimits: torrent.honorsSessionLimits,
             sequentialDownload: torrent.sequential_download,
         });
-    }, [setValues, torrent]);
+    }, [reset, torrent]);
 
     const { mutate } = useMutateTorrent();
 
     const onSave = useCallback(() => {
         if (torrentId === undefined || torrent === undefined) return;
 
+        const values = form.getValues();
         mutate(
             {
                 torrentIds: [...selected],
                 fields: {
-                    ...form.values,
-                    "peer-limit": form.values.peerLimit,
-                    sequential_download: form.values.sequentialDownload,
+                    ...values,
+                    "peer-limit": values.peerLimit,
+                    sequential_download: values.sequentialDownload,
                 },
             },
             {
@@ -100,7 +104,7 @@ export function EditTorrent(props: ModalState) {
             },
         );
         props.close();
-    }, [torrentId, torrent, mutate, selected, form.values, props]);
+    }, [torrentId, torrent, mutate, selected, form, props]);
 
     return <>
         {props.opened
@@ -109,110 +113,106 @@ export function EditTorrent(props: ModalState) {
                 size="lg"
                 onClose={props.close}
                 onSave={onSave}
-                centered
                 title="Edit torrent properties"
-                mih="25rem"
+                bodyClassName="relative min-h-[25rem]"
             >
                 <LoadingOverlay visible={isPending} />
-                <Grid align="center">
-                    <Grid.Col>
+                <div className="grid grid-cols-12 items-center gap-2">
+                    <div className="col-span-12">
                         <TorrentsNames />
-                    </Grid.Col>
-                    <Grid.Col span={8}>
-                        <Checkbox
-                            my="sm"
+                    </div>
+                    <div className="col-span-8">
+                        <RhfCheckbox
+                            control={form.control}
+                            name="honorsSessionLimits"
+                            className="my-1.5"
                             label="Honor session upload limit"
-                            {...form.getInputProps("honorsSessionLimits", { type: "checkbox" })}
                         />
-                    </Grid.Col>
-                    <Grid.Col span={4}>
+                    </div>
+                    <div className="col-span-4">
                         {rpcVersion >= 18
-                            && <Checkbox
-                                my="sm"
+                            && <RhfCheckbox
+                                control={form.control}
+                                name="sequentialDownload"
+                                className="my-1.5"
                                 label="Sequential download"
-                                {...form.getInputProps("sequentialDownload", { type: "checkbox" })}
                             />}
-                    </Grid.Col>
-                    <Grid.Col span={8}>
-                        <Checkbox
-                            label="Maximum download speed"
-                            {...form.getInputProps("downloadLimited", { type: "checkbox" })}
-                        />
-                    </Grid.Col>
-                    <Grid.Col span={2}>
-                        <NumberInput
+                    </div>
+                    <div className="col-span-8">
+                        <RhfCheckbox control={form.control} name="downloadLimited" label="Maximum download speed" />
+                    </div>
+                    <div className="col-span-2">
+                        <RhfNumber
+                            control={form.control}
+                            name="downloadLimit"
                             min={0}
-                            {...form.getInputProps("downloadLimit")}
-                            disabled={form.values.downloadLimited !== true}
+                            disabled={values.downloadLimited !== true}
                         />
-                    </Grid.Col>
-                    <Grid.Col span={2}>
+                    </div>
+                    <div className="col-span-2">
                         KB/s
-                    </Grid.Col>
-                    <Grid.Col span={8}>
-                        <Checkbox
-                            label="Maximum upload speed"
-                            {...form.getInputProps("uploadLimited", { type: "checkbox" })}
-                        />
-                    </Grid.Col>
-                    <Grid.Col span={2}>
-                        <NumberInput
+                    </div>
+                    <div className="col-span-8">
+                        <RhfCheckbox control={form.control} name="uploadLimited" label="Maximum upload speed" />
+                    </div>
+                    <div className="col-span-2">
+                        <RhfNumber
+                            control={form.control}
+                            name="uploadLimit"
                             min={0}
-                            {...form.getInputProps("uploadLimit")}
-                            disabled={form.values.uploadLimited !== true}
+                            disabled={values.uploadLimited !== true}
                         />
-                    </Grid.Col>
-                    <Grid.Col span={2}>
+                    </div>
+                    <div className="col-span-2">
                         KB/s
-                    </Grid.Col>
-                    <Grid.Col span={8}>
+                    </div>
+                    <div className="col-span-8">
                         Peer limit
-                    </Grid.Col>
-                    <Grid.Col span={2}>
-                        <NumberInput
-                            min={0}
-                            {...form.getInputProps("peerLimit")}
-                        />
-                    </Grid.Col>
-                    <Grid.Col span={2} />
-                    <Grid.Col span={8}>
-                        <Checkbox
+                    </div>
+                    <div className="col-span-2">
+                        <RhfNumber control={form.control} name="peerLimit" min={0} />
+                    </div>
+                    <div className="col-span-2" />
+                    <div className="col-span-8">
+                        <CheckboxField
                             label="Seed ratio"
-                            checked={form.values.seedRatioMode < 2}
-                            indeterminate={form.values.seedRatioMode === 0}
-                            onChange={() => { form.setFieldValue("seedRatioMode", (form.values.seedRatioMode + 1) % 3); }}
+                            checked={values.seedRatioMode < 2}
+                            indeterminate={values.seedRatioMode === 0}
+                            onChange={() => { form.setValue("seedRatioMode", (values.seedRatioMode + 1) % 3); }}
                         />
-                    </Grid.Col>
-                    <Grid.Col span={2}>
-                        <NumberInput
+                    </div>
+                    <div className="col-span-2">
+                        <RhfNumber
+                            control={form.control}
+                            name="seedRatioLimit"
                             min={0}
                             step={0.05}
                             decimalScale={2}
                             fixedDecimalScale
-                            {...form.getInputProps("seedRatioLimit")}
-                            disabled={form.values.seedRatioMode !== 1}
+                            disabled={values.seedRatioMode !== 1}
                         />
-                    </Grid.Col>
-                    <Grid.Col span={2} />
-                    <Grid.Col span={8}>
-                        <Checkbox
+                    </div>
+                    <div className="col-span-2" />
+                    <div className="col-span-8">
+                        <CheckboxField
                             label="Stop seeding when inactive for"
-                            checked={form.values.seedIdleMode < 2}
-                            indeterminate={form.values.seedIdleMode === 0}
-                            onChange={() => { form.setFieldValue("seedIdleMode", (form.values.seedIdleMode + 1) % 3); }}
+                            checked={values.seedIdleMode < 2}
+                            indeterminate={values.seedIdleMode === 0}
+                            onChange={() => { form.setValue("seedIdleMode", (values.seedIdleMode + 1) % 3); }}
                         />
-                    </Grid.Col>
-                    <Grid.Col span={2}>
-                        <NumberInput
+                    </div>
+                    <div className="col-span-2">
+                        <RhfNumber
+                            control={form.control}
+                            name="seedIdleLimit"
                             min={0}
-                            {...form.getInputProps("seedIdleLimit")}
-                            disabled={form.values.seedIdleMode !== 1}
+                            disabled={values.seedIdleMode !== 1}
                         />
-                    </Grid.Col>
-                    <Grid.Col span={2}>
+                    </div>
+                    <div className="col-span-2">
                         minutes
-                    </Grid.Col>
-                </Grid>
+                    </div>
+                </div>
             </SaveCancelModal>}
     </>;
 }

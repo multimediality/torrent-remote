@@ -24,7 +24,6 @@ import { bytesToHumanReadableStr } from "trutil";
 import type { TrguiTableFeatures } from "./common";
 import { TrguiTable, useStandardSelect } from "./common";
 import { ProgressBar } from "components/progressbar";
-import { Flex } from "@mantine/core";
 import { ConfigContext } from "config";
 const { TAURI } = await import(/* webpackChunkName: "taurishim" */"taurishim");
 if (TAURI) await import(/* webpackChunkName: "flag-icons" */"flagsshim");
@@ -61,10 +60,10 @@ if (TAURI) AllFields.splice(1, 0, { name: "cachedCountryName", label: "Country",
 
 function CountryField(props: TableFieldProps) {
     const iso = props.entry.cachedCountryIso;
-    return <Flex gap="sm" style={{ width: "100%" }}>
+    return <div className="flex w-full gap-1.5">
         {iso !== undefined && <span className={`fi fi-${iso.toLowerCase()}`} style={{ flexShrink: 0 }} />}
         <span>{props.entry.cachedCountryName}</span>
-    </Flex>;
+    </div>;
 }
 
 function ByteRateField(props: TableFieldProps) {

@@ -17,7 +17,6 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { Box, Flex, Loader, Overlay, Title } from "@mantine/core";
 import classes from "./server.module.css";
 import React, { useCallback, useContext, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import type { SplitType } from "../config";
@@ -37,8 +36,9 @@ import type { ModalCallbacks } from "./modals/servermodals";
 import { MemoizedServerModals } from "./modals/servermodals";
 import { useAppHotkeys, useHotkeysContext } from "hotkeys";
 import { SplitLayout } from "./splitlayout";
-import { useDisclosure, useToggle } from "@mantine/hooks";
+import { useDisclosure, useToggle } from "hooks";
 import type { ServerTabsRef } from "./servertabs";
+import { Loader, Overlay } from "./ui/loader";
 
 const { TAURI, appWindow, invoke } = await import(/* webpackChunkName: "taurishim" */"taurishim");
 
@@ -230,31 +230,25 @@ export function Server({ hostname, tabsRef, toolbarExtra, toggleTabStrip }: Serv
     }, [config, showFiltersPanel, showDetailsPanel, mainSplit]);
 
     return <ServerContext data={serverData} selected={selectedTorrents} rpc={rpcVersion}>
-        <Flex direction="column" className={classes.serverContainer}>
+        <div className={`flex flex-col ${classes.serverContainer}`}>
             <MemoizedServerModals ref={modals} {...{ runUpdates, tabsRef }} serverName={serverConfig.name} />
             {overlayVisible && <Overlay blur={10}>
-                <Flex
-                    align="center"
-                    justify="center"
-                    h="100%"
-                    direction="column"
-                    gap="xl"
-                >
+                <div className="flex h-full flex-col items-center justify-center gap-4 px-4 text-center">
                     {sessionIsLoading
-                        ? <Loader size="xl" />
+                        ? <Loader size="3.5rem" />
                         : sessionIsError
                             ? <>
-                                <Title c="red" order={1}>Failed to load session</Title>
-                                <Title c="red" order={3}>{(sessionError as Error).message}</Title>
+                                <h1 className="text-3xl font-bold text-[#fa5252]">Failed to load session</h1>
+                                <h3 className="text-xl font-bold text-[#fa5252]">{(sessionError as Error).message}</h3>
                             </>
                             : session?.["rpc-version"] === undefined
-                                ? <Title c="red" order={1}>Server does not appear to be transmission daemon</Title>
+                                ? <h1 className="text-3xl font-bold text-[#fa5252]">Server does not appear to be transmission daemon</h1>
                                 : rpcVersion < 14
-                                    ? <Title c="red" order={1}>Transmission version 2.40 or higher is required.</Title>
+                                    ? <h1 className="text-3xl font-bold text-[#fa5252]">Transmission version 2.40 or higher is required.</h1>
                                     : <></>}
-                </Flex>
+                </div>
             </Overlay>}
-            <Box p="sm" className={classes.toolbarContainer}>
+            <div className={`p-1.5 ${classes.toolbarContainer}`}>
                 <MemoizedToolbar
                     setSearchTerms={setSearchTerms}
                     modals={modals}
@@ -265,7 +259,7 @@ export function Server({ hostname, tabsRef, toolbarExtra, toggleTabStrip }: Serv
                     toggleMainSplit={toggleMainSplit}
                     toggleTabStrip={toggleTabStrip}
                 />
-            </Box>
+            </div>
             <SplitLayout
                 key={`split-${showFiltersPanel ? "1" : "0"}-${showDetailsPanel ? "1" : "0"}-${mainSplit}`}
                 mainSplit={mainSplit}
@@ -293,7 +287,7 @@ export function Server({ hostname, tabsRef, toolbarExtra, toggleTabStrip }: Serv
                     ? <MemoizedDetails torrentId={currentTorrent} updates={updates} />
                     : undefined}
             />
-            <Box px="xs" className={classes.statusbarContainer}>
+            <div className={`px-1 ${classes.statusbarContainer}`}>
                 <Statusbar {...{
                     session,
                     filteredTorrents,
@@ -303,7 +297,7 @@ export function Server({ hostname, tabsRef, toolbarExtra, toggleTabStrip }: Serv
                     showMisc: Boolean(toolbarExtra),
                 }}
                 />
-            </Box>
-        </Flex>
+            </div>
+        </div>
     </ServerContext>;
 }

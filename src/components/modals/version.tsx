@@ -17,7 +17,6 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { Anchor, Box, Button, Divider, Flex, Grid, Text } from "@mantine/core";
 import type { ModalState } from "./common";
 import { HkModal } from "./common";
 import appVersionJson from "build/version.json";
@@ -28,6 +27,8 @@ import AppLogo from "svg/app.svg";
 import { Github } from "react-bootstrap-icons";
 import { UAParser } from "ua-parser-js";
 import { checkForUpdates } from "updater";
+import { Button } from "components/ui/button";
+import { Separator } from "components/ui/separator";
 const { TAURI } = await import(/* webpackChunkName: "taurishim" */"taurishim");
 
 interface AppVersion {
@@ -56,52 +57,52 @@ export function VersionModal({ opened, close }: ModalState) {
             opened={opened}
             onClose={close}
             size="lg"
-            centered
-            p="lg"
-            styles={{ header: { padding: "1em", alignItems: "start" } }}
-            title={<Text size="2em" fw="bold">Torrent Remote</Text>}
+            title={<span className="text-[2em] font-bold">Torrent Remote</span>}
+            className="p-2"
         >
-            <Text>
+            <div>
                 Remote interface for&nbsp;
-                <Anchor href="https://transmissionbt.com/" target="_blank" rel="noreferrer">Transmission</Anchor>
+                <a href="https://transmissionbt.com/" target="_blank" rel="noreferrer">Transmission</a>
                 &nbsp;torrent daemon
-            </Text>
-            <Divider px="sm" my="xl" />
-            <Flex gap="md" align="center">
+            </div>
+            <Separator className="my-4" />
+            <div className="flex items-center gap-2">
                 <AppLogo style={{ flexShrink: 0 }} />
-                <Grid>
-                    <Grid.Col span={4}>Version</Grid.Col>
-                    <Grid.Col span={8}>
+                <div className="grid flex-grow grid-cols-12 gap-x-2 gap-y-1">
+                    <div className="col-span-4">Version</div>
+                    <div className="col-span-8">
                         {appVersion.gitVersion}
                         {TAURI && <Button
                             variant="light"
-                            size="compact-xs"
-                            ml="md"
+                            size="xs"
+                            className="ml-2"
                             onClick={() => { void checkForUpdates(true); }}
                         >
                             Check for updates
                         </Button>}
-                    </Grid.Col>
-                    <Grid.Col span={4}>Frontend</Grid.Col>
-                    <Grid.Col span={8}>{frontend}</Grid.Col>
-                    <Grid.Col span={4}>Build date</Grid.Col>
-                    <Grid.Col span={8}>{new Date(appVersion.buildDate).toLocaleString()}</Grid.Col>
-                    <Grid.Col span={4}>Source code</Grid.Col>
-                    <Grid.Col span={8}>
-                        <Box component="span" mr="sm"><Github /></Box>
-                        <Anchor href="https://github.com/scdemanett/torrent-remote/" target="_blank" rel="noreferrer">github</Anchor>
-                    </Grid.Col>
-                    <Grid.Col mt="xl">{TAURI && <Anchor href="https://db-ip.com" target="_blank" rel="noreferrer">IP Geolocation by DB-IP</Anchor>}</Grid.Col>
-                </Grid>
-            </Flex>
-            <Divider px="sm" my="xl" />
-            <Text ta="center">
+                    </div>
+                    <div className="col-span-4">Frontend</div>
+                    <div className="col-span-8">{frontend}</div>
+                    <div className="col-span-4">Build date</div>
+                    <div className="col-span-8">{new Date(appVersion.buildDate).toLocaleString()}</div>
+                    <div className="col-span-4">Source code</div>
+                    <div className="col-span-8">
+                        <span className="mr-1.5"><Github /></span>
+                        <a href="https://github.com/scdemanett/torrent-remote/" target="_blank" rel="noreferrer">github</a>
+                    </div>
+                    <div className="col-span-12 mt-4">
+                        {TAURI && <a href="https://db-ip.com" target="_blank" rel="noreferrer">IP Geolocation by DB-IP</a>}
+                    </div>
+                </div>
+            </div>
+            <Separator className="my-4" />
+            <div className="text-center">
                 powered by
-            </Text>
-            <Flex justify="center">
-                <Anchor href="https://react.dev/" target="_blank" rel="noreferrer"><ReactLogo /></Anchor>
-                <Anchor href="https://tauri.app/" target="_blank" rel="noreferrer"><TauriLogo /></Anchor>
-            </Flex>
+            </div>
+            <div className="flex justify-center">
+                <a href="https://react.dev/" target="_blank" rel="noreferrer"><ReactLogo /></a>
+                <a href="https://tauri.app/" target="_blank" rel="noreferrer"><TauriLogo /></a>
+            </div>
         </HkModal>
     );
 }

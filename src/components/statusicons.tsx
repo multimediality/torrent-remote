@@ -17,76 +17,63 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { useMantineTheme } from "@mantine/core";
 import React from "react";
 import * as Icon from "react-bootstrap-icons";
 import { Status } from "rpc/transmission";
+import { Palette } from "palette";
 import ActiveIcon from "svg/icons/active.svg";
 import PausedIcon from "svg/icons/paused.svg";
 
 export function All() {
-    const theme = useMantineTheme();
-    return <Icon.Asterisk size="1rem" stroke={theme.colors.orange[3]} fill={theme.colors.yellow[3]} />;
+    return <Icon.Asterisk size="1rem" stroke={Palette.orange[3]} fill={Palette.yellow[3]} />;
 }
 
 export function Downloading() {
-    const theme = useMantineTheme();
-    return <Icon.CaretDownSquareFill size="1rem" fill={theme.colors.indigo[4]} />;
+    return <Icon.CaretDownSquareFill size="1rem" fill={Palette.indigo[4]} />;
 }
 
 export function Completed() {
-    const theme = useMantineTheme();
-    return <Icon.CaretUpSquareFill size="1rem" fill={theme.colors.green[7]} />;
+    return <Icon.CaretUpSquareFill size="1rem" fill={Palette.green[7]} />;
 }
 
 export function Active() {
-    const theme = useMantineTheme();
-    return <ActiveIcon width="1rem" height="1rem" fill={theme.colors.red[6]} />;
+    return <ActiveIcon width="1rem" height="1rem" fill={Palette.red[6]} />;
 }
 
 export function Inactive() {
-    const theme = useMantineTheme();
-    return <Icon.Snow size="1rem" fill={theme.colors.cyan[4]} />;
+    return <Icon.Snow size="1rem" fill={Palette.cyan[4]} />;
 }
 
 export function Running() {
-    const theme = useMantineTheme();
-    return <Icon.CaretRightSquareFill size="1rem" fill={theme.colors.lime[7]} />;
+    return <Icon.CaretRightSquareFill size="1rem" fill={Palette.lime[7]} />;
 }
 
 export function Stopped() {
-    const theme = useMantineTheme();
-    return <PausedIcon width="1rem" height="1rem" fill={theme.colors.yellow[6]} />;
+    return <PausedIcon width="1rem" height="1rem" fill={Palette.yellow[6]} />;
 }
 
 export function Error() {
-    const theme = useMantineTheme();
-    return <Icon.XSquareFill size="1rem" fill={theme.colors.red[6]} />;
+    return <Icon.XSquareFill size="1rem" fill={Palette.red[6]} />;
 }
 
 export function Waiting() {
-    const theme = useMantineTheme();
-    return <Icon.ClockFill size="1rem" fill={theme.colors.cyan[4]} />;
+    return <Icon.ClockFill size="1rem" fill={Palette.cyan[4]} />;
 }
 
 export function Label() {
-    const theme = useMantineTheme();
-    return <Icon.TagsFill size="1rem" stroke={theme.colors.indigo[9]} fill={theme.colors.blue[4]} />;
+    return <Icon.TagsFill size="1rem" stroke={Palette.indigo[9]} fill={Palette.blue[4]} />;
 }
 
 export function Tracker() {
-    const theme = useMantineTheme();
-    return <Icon.Wifi size="1rem" stroke={theme.colors.indigo[9]} fill={theme.colors.blue[4]} />;
+    return <Icon.Wifi size="1rem" stroke={Palette.indigo[9]} fill={Palette.blue[4]} />;
 }
 
 export function Magnetizing() {
-    const theme = useMantineTheme();
-    return <Icon.MagnetFill size="1rem" fill={theme.colors.indigo[4]} />;
+    return <Icon.MagnetFill size="1rem" fill={Palette.indigo[4]} />;
 }
 
 export function CompletedStopped() {
-    const theme = useMantineTheme();
-    return <Icon.CheckSquareFill size="1rem" fill={theme.colors.green[9]} />;
+    return <Icon.CheckSquareFill size="1rem" fill={Palette.green[9]} />;
 }
 
 export const StatusIconMap: Record<number, React.FC> = {

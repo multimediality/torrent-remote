@@ -17,9 +17,13 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import type { MenuProps } from "@mantine/core";
-import { Button, Menu, Portal, ScrollArea } from "@mantine/core";
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useContext, useState } from "react";
+import { createPortal } from "react-dom";
+import {
+    DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator,
+    DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuTrigger,
+} from "components/ui/dropdown-menu";
+import { cn } from "lib/utils";
 import classes from "./contextmenu.module.css";
 
 export interface ContextMenuInfo {
@@ -40,62 +44,117 @@ export function useContextMenu(): [ContextMenuInfo, React.Dispatch<ContextMenuIn
     return [info, setInfo, contextMenuHandler];
 }
 
-export interface ContextMenuProps extends MenuProps {
+const KeepOpenContext = React.createContext(false);
+
+export interface ContextMenuProps extends React.PropsWithChildren {
     contextMenuInfo: ContextMenuInfo,
-    closeOnClickOutside?: boolean,
-    autosize?: boolean,
     setContextMenuInfo: (i: ContextMenuInfo) => void,
+    /** keep the menu open after an item was activated (toggle lists) */
+    closeOnItemClick?: boolean,
+    /** limit height to the viewport and scroll */
+    autosize?: boolean,
+    className?: string,
 }
 
+/**
+ * Dropdown menu anchored to the pointer position recorded by useContextMenu.
+ * A zero-size trigger is placed at the click point so the usual collision
+ * handling keeps the menu inside the window.
+ */
 export function ContextMenu({
     contextMenuInfo,
-    closeOnClickOutside = true,
-    autosize,
     setContextMenuInfo,
+    closeOnItemClick = true,
+    autosize,
+    className,
     children,
-    ...other
 }: ContextMenuProps) {
-    const onClose = useCallback(
-        () => {
-            setContextMenuInfo({ ...contextMenuInfo, opened: false });
-        }, [contextMenuInfo, setContextMenuInfo]);
+    const onOpenChange = useCallback((open: boolean) => {
+        if (!open) setContextMenuInfo({ ...contextMenuInfo, opened: false });
+    }, [contextMenuInfo, setContextMenuInfo]);
 
     return (
-        <Menu
-            {...other}
-            opened={contextMenuInfo.opened}
-            onClose={onClose}
-            offset={0}
-            middlewares={{ shift: true, flip: true }}
-            position="right-start"
-            transitionProps={{ duration: 0 }}
-            closeOnClickOutside={closeOnClickOutside}
-            zIndex={500}
-        >
-            <Portal>
-                <Menu.Target>
-                    <Button
-                        unstyled
-                        className={classes.contextMenuButton}
-                        style={{
-                            left: contextMenuInfo.x,
-                            top: contextMenuInfo.y,
-                        }}
+        <DropdownMenu open={contextMenuInfo.opened} onOpenChange={onOpenChange} modal={false}>
+            {createPortal(
+                <DropdownMenuTrigger asChild>
+                    <span
+                        aria-hidden
+                        className={classes.contextMenuAnchor}
+                        style={{ left: contextMenuInfo.x, top: contextMenuInfo.y }}
                     />
-                </Menu.Target>
-                <Menu.Dropdown>
-                    {autosize === true
-                        ? <ScrollArea.Autosize
-                            type="auto"
-                            mah="calc(100vh - 0.5rem)"
-                            offsetScrollbars
-                            styles={{ viewport: { paddingBottom: 0 } }}
-                        >
-                            {children}
-                        </ScrollArea.Autosize>
-                        : children}
-                </Menu.Dropdown>
-            </Portal>
-        </Menu>
+                </DropdownMenuTrigger>,
+                document.body,
+            )}
+            <DropdownMenuContent
+                side="right"
+                align="start"
+                sideOffset={0}
+                collisionPadding={4}
+                className={cn(autosize === true && "max-h-[calc(100vh-0.5rem)]", className)}
+                onCloseAutoFocus={(e) => { e.preventDefault(); }}
+            >
+                <KeepOpenContext.Provider value={!closeOnItemClick}>
+                    {children}
+                </KeepOpenContext.Provider>
+            </DropdownMenuContent>
+        </DropdownMenu>
     );
 }
+
+export interface MenuItemProps extends React.ComponentProps<typeof DropdownMenuItem> {
+    leftSection?: React.ReactNode,
+    rightSection?: React.ReactNode,
+}
+
+/** Menu item with Mantine-style left/right sections; honours the ContextMenu closeOnItemClick setting. */
+export function MenuItem({ leftSection, rightSection, children, onSelect, className, ...props }: MenuItemProps) {
+    const keepOpen = useContext(KeepOpenContext);
+
+    return (
+        <DropdownMenuItem
+            {...props}
+            className={cn("gap-2.5", className)}
+            onSelect={(e) => {
+                if (keepOpen) e.preventDefault();
+                onSelect?.(e);
+            }}
+        >
+            {leftSection !== undefined
+                && <span className="flex w-[1.1rem] shrink-0 items-center justify-center">{leftSection}</span>}
+            <span className="min-w-0 flex-grow">{children}</span>
+            {rightSection !== undefined
+                && <span className="ml-auto flex shrink-0 items-center pl-3">{rightSection}</span>}
+        </DropdownMenuItem>
+    );
+}
+
+export interface MenuSubItemProps extends React.ComponentProps<typeof DropdownMenuSubTrigger> {
+    leftSection?: React.ReactNode,
+}
+
+export function MenuSubTrigger({ leftSection, children, className, ...props }: MenuSubItemProps) {
+    return (
+        <DropdownMenuSubTrigger {...props} className={cn("gap-2.5", className)}>
+            {leftSection !== undefined
+                && <span className="flex w-[1.1rem] shrink-0 items-center justify-center">{leftSection}</span>}
+            <span className="min-w-0 flex-grow">{children}</span>
+        </DropdownMenuSubTrigger>
+    );
+}
+
+export function MenuSubContent({ children, ...props }: React.ComponentProps<typeof DropdownMenuSubContent>) {
+    const keepOpen = useContext(KeepOpenContext);
+    return (
+        <DropdownMenuSubContent {...props}>
+            <KeepOpenContext.Provider value={keepOpen}>
+                {children}
+            </KeepOpenContext.Provider>
+        </DropdownMenuSubContent>
+    );
+}
+
+export const MenuSub = DropdownMenuSub;
+export const MenuDivider = DropdownMenuSeparator;
+
+/** Empty left section placeholder so labels line up with checked items. */
+export const MenuSpacer = () => <span className="inline-block w-4" />;

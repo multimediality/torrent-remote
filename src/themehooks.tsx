@@ -17,7 +17,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { useToggle } from "@mantine/hooks";
+import { useToggle } from "hooks";
 import type { StyleOverrides } from "config";
 import { ConfigContext } from "config";
 import React, { useContext, useEffect, useMemo } from "react";

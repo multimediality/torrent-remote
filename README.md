@@ -12,7 +12,7 @@
 by qu1ck, itself a rewrite of the [transgui](https://github.com/transmission-remote-gui/transgui)
 project using [tauri](https://tauri.app).
 Frontend is written in typescript with [react.js](https://react.dev/) and
-[mantine](https://mantine.dev/) library. Backend for the app is written in
+[shadcn/ui](https://ui.shadcn.com/) components on [Tailwind CSS](https://tailwindcss.com/). Backend for the app is written in
 [rust](https://www.rust-lang.org/).
 
 You can use this program in 2 ways: as a native Windows/Linux/Mac app and as a web gui

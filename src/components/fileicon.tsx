@@ -19,12 +19,14 @@
 
 import * as Icon from "react-bootstrap-icons";
 import React from "react";
-import { useComputedColorScheme, useMantineTheme, type DefaultMantineColor } from "@mantine/core";
+import { useComputedColorScheme } from "components/theme";
+import type { PaletteColorName } from "palette";
+import { paletteShade } from "palette";
 import { useRowSelected } from "./tables/common";
 
 interface FileType {
     icon: React.FunctionComponent<Icon.IconProps>,
-    color: DefaultMantineColor,
+    color: PaletteColorName,
     extensions: Readonly<string[]>,
 }
 
@@ -83,7 +85,6 @@ const extensions = fileTypes.reduce<Record<string, FileType>>((v, c) => {
 }, {});
 
 export function FileIcon({ name }: { name: string }) {
-    const theme = useMantineTheme();
     const colorScheme = useComputedColorScheme();
     const selected = useRowSelected();
     const ext = name.substring(name.lastIndexOf(".") + 1).toLowerCase();
@@ -91,5 +92,5 @@ export function FileIcon({ name }: { name: string }) {
     const color = Object.prototype.hasOwnProperty.call(extensions, ext) ? extensions[ext].color : "gray";
     const shade = (colorScheme === "dark" || selected) ? 3 : 9;
 
-    return <FileIcon size="1.1rem" color={theme.colors[color][shade]} />;
+    return <FileIcon size="1.1rem" color={paletteShade(color, shade)} />;
 }

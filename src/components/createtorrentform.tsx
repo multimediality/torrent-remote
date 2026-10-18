@@ -17,13 +17,19 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { Box, Button, Checkbox, Flex, Group, Slider, Text, TextInput, Textarea, useMantineColorScheme } from "@mantine/core";
-import { useForm } from "@mantine/form";
+import { useForm } from "react-hook-form";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { appVersion } from "./modals/version";
 import { ProgressBar } from "./progressbar";
 import { bytesToHumanReadableStr } from "trutil";
 import classes from "./createtorrentform.module.css";
+import "css/custom.css";
+import { useColorScheme } from "./theme";
+import { RhfCheckbox, RhfText } from "./formfields";
+import { Button } from "./ui/button";
+import { Slider } from "./ui/slider";
+import { TextareaField } from "./ui/fields";
+import { Label } from "./ui/label";
 const { appWindow, invoke, dialogOpen, dialogSave } = await import(/* webpackChunkName: "taurishim" */"taurishim");
 
 interface FormValues {
@@ -37,12 +43,6 @@ interface FormValues {
     urlList: string[],
     version: string,
 }
-
-const textAreaClassNames = {
-    root: classes.textAreaRoot,
-    wrapper: classes.textAreaWrapper,
-    input: classes.textAreaInput,
-};
 
 const byteLabel = (b: number) => {
     if (b >= 1024 * 1024) return `${b / 1024 / 1024} MB`;
@@ -78,7 +78,7 @@ interface InfobarState {
 }
 
 export default function CreateTorrentForm() {
-    const { setColorScheme } = useMantineColorScheme();
+    const { setColorScheme } = useColorScheme();
     const [defaultTrackers, setDefaultTrackers] = useState<string[]>([]);
     const [pieces, setPieces] = useState({
         done: 0,
@@ -91,7 +91,7 @@ export default function CreateTorrentForm() {
     });
 
     const form = useForm<FormValues>({
-        initialValues: {
+        defaultValues: {
             path: "",
             name: "",
             pieceLength: 2 ** 18,
@@ -104,6 +104,8 @@ export default function CreateTorrentForm() {
         },
     });
 
+    const values = form.watch();
+
     useEffect(() => {
         void appWindow.once<PassEventData>("pass-from-window", ({ payload: data }) => {
             const { colorScheme, defaultTrackers } = JSON.parse(data.payload);
@@ -113,13 +115,13 @@ export default function CreateTorrentForm() {
         void invoke("pass_to_window", { to: "main", payload: "ready" });
     }, [setColorScheme]);
 
-    const { setFieldValue } = form;
+    const { setValue } = form;
 
     const setPathAndCalculate = useCallback((path: string[] | string | null) => {
         if (typeof path !== "string") return;
-        setFieldValue("path", path);
+        setValue("path", path);
         const name = path.split(/[\\/]/).pop() ?? "";
-        setFieldValue("name", name);
+        setValue("name", name);
         setState({
             state: "calculating",
             error: "",
@@ -144,33 +146,33 @@ export default function CreateTorrentForm() {
             let pieceLength = Math.ceil(Math.log2(sizes.size / 2000));
             if (pieceLength < 18) pieceLength = 18; // at least 256KB
             if (pieceLength > 24) pieceLength = 24; // at most 16MB
-            setFieldValue("pieceLength", 2 ** pieceLength);
+            setValue("pieceLength", 2 ** pieceLength);
         }).catch((error) => {
             setState({ state: "error", error, hash: "" });
             clearInterval(timer.current);
         });
-    }, [setFieldValue]);
+    }, [setValue]);
 
     const onBrowseFile = useCallback(() => {
         dialogOpen({
             title: "Select file",
-            defaultPath: form.values.path === "" ? undefined : form.values.path,
+            defaultPath: values.path === "" ? undefined : values.path,
             multiple: false,
         }).then(setPathAndCalculate).catch(console.error);
-    }, [form.values.path, setPathAndCalculate]);
+    }, [values.path, setPathAndCalculate]);
 
     const onBrowseDirectory = useCallback(() => {
         dialogOpen({
             title: "Select directory",
-            defaultPath: form.values.path === "" ? undefined : form.values.path,
+            defaultPath: values.path === "" ? undefined : values.path,
             directory: true,
         }).then(setPathAndCalculate).catch(console.error);
-    }, [form.values.path, setPathAndCalculate]);
+    }, [values.path, setPathAndCalculate]);
 
     const timer = useRef(0);
 
     const onGenerate = useCallback(() => {
-        invoke("create_torrent", { info: form.values }).then(() => {
+        invoke("create_torrent", { info: form.getValues() }).then(() => {
             clearInterval(timer.current);
 
             timer.current = window.setInterval(() => {
@@ -199,7 +201,7 @@ export default function CreateTorrentForm() {
         }).catch((error) => {
             setState({ state: "error", error, hash: "" });
         });
-    }, [form.values]);
+    }, [form]);
 
     const onCancel = useCallback(() => {
         clearInterval(timer.current);
@@ -213,7 +215,7 @@ export default function CreateTorrentForm() {
     const onSave = useCallback(() => {
         dialogSave({
             title: "Save torrent file",
-            defaultPath: form.values.name,
+            defaultPath: values.name,
             filters: [{
                 name: "Torrent",
                 extensions: ["torrent"],
@@ -227,29 +229,24 @@ export default function CreateTorrentForm() {
                 });
             }
         }).catch(console.error);
-    }, [form.values.name]);
+    }, [values.name]);
 
     const addDefaultTrackers = useCallback(() => {
-        let list = form.values.announceList;
+        let list = form.getValues("announceList");
         list = [...list, ...defaultTrackers];
-        form.setFieldValue("announceList", list);
+        form.setValue("announceList", list);
     }, [defaultTrackers, form]);
 
     const browseDisabled = ["calculating", "generating"].includes(state.state);
 
     return (
-        <Flex
-            direction="column"
-            h="100%"
-            w="100%"
-            p="lg"
-            gap="md"
-        >
-            <Group align="flex-end">
-                <TextInput
+        <div className="flex h-full w-full flex-col gap-2 p-3">
+            <div className="flex items-end gap-2">
+                <RhfText
+                    control={form.control}
+                    name="path"
                     label="Select file or directory"
-                    {...form.getInputProps("path")}
-                    style={{ flexGrow: 1 }}
+                    wrapperClassName="flex-grow"
                     readOnly
                     autoComplete="off"
                     autoCorrect="off"
@@ -258,72 +255,82 @@ export default function CreateTorrentForm() {
                 />
                 <Button onClick={onBrowseFile} disabled={browseDisabled}>File</Button>
                 <Button onClick={onBrowseDirectory} disabled={browseDisabled}>Directory</Button>
-            </Group>
-            <TextInput
+            </div>
+            <RhfText
+                control={form.control}
+                name="name"
                 label="Torrent name"
-                {...form.getInputProps("name")}
                 autoComplete="off"
                 autoCorrect="off"
                 autoCapitalize="off"
                 spellCheck="false"
             />
-            <Text fz="sm">Piece size</Text>
-            <Slider
-                pt="2.5rem"
-                mt="-0.5rem"
-                pb="0.5rem"
-                px="1rem"
-                scale={(v) => 2 ** v}
-                step={1}
-                min={14}
-                max={28}
-                labelAlwaysOn
-                label={byteLabel}
-                value={Math.log2(form.values.pieceLength)}
-                onChange={(value) => { form.setFieldValue("pieceLength", 2 ** value); }}
-            />
-            <TextInput
+            <Label>Piece size</Label>
+            <div className="px-4 pt-10 pb-2">
+                <Slider
+                    step={1}
+                    min={14}
+                    max={28}
+                    label={(v) => byteLabel(2 ** v)}
+                    value={Math.log2(values.pieceLength)}
+                    onValueChange={([value]) => { form.setValue("pieceLength", 2 ** value); }}
+                />
+            </div>
+            <RhfText
+                control={form.control}
+                name="comment"
                 label="Comment"
-                {...form.getInputProps("comment")}
             />
-            <TextInput
+            <RhfText
+                control={form.control}
+                name="source"
                 label="Source (leave empty unless required by a private tracker)"
-                {...form.getInputProps("source")}
                 autoComplete="off"
                 autoCorrect="off"
                 autoCapitalize="off"
                 spellCheck="false"
             />
-            <Checkbox
+            <RhfCheckbox
+                control={form.control}
+                name="private"
                 label="Private torrent"
-                {...form.getInputProps("private", { type: "checkbox" })}
             />
-            <Group align="flex-end">
-                <Box style={{ flexGrow: 1 }}>Tracker list, one per line, empty line between tiers</Box>
+            <div className="flex items-end gap-2">
+                <div className="flex-grow text-sm">Tracker list, one per line, empty line between tiers</div>
                 <Button onClick={addDefaultTrackers}>Add default list</Button>
-            </Group>
-            <Textarea
-                classNames={textAreaClassNames}
-                value={form.values.announceList.join("\n")}
-                onChange={(e) => { form.setFieldValue("announceList", e.target.value.split("\n")); }}
+            </div>
+            <TextareaField
+                wrapperClassName={classes.textAreaRoot}
+                className={classes.textAreaInput}
+                value={values.announceList.join("\n")}
+                onChange={(e) => { form.setValue("announceList", e.target.value.split("\n")); }}
+                autoComplete="off"
+                autoCorrect="off"
+                autoCapitalize="off"
+                spellCheck="false"
             />
-            <Textarea
-                classNames={textAreaClassNames}
+            <TextareaField
+                wrapperClassName={classes.textAreaRoot}
+                className={classes.textAreaInput}
                 label="Web seed URLs, one per line"
-                value={form.values.urlList.join("\n")}
-                onChange={(e) => { form.setFieldValue("urlList", e.target.value.split("\n")); }}
+                value={values.urlList.join("\n")}
+                onChange={(e) => { form.setValue("urlList", e.target.value.split("\n")); }}
+                autoComplete="off"
+                autoCorrect="off"
+                autoCapitalize="off"
+                spellCheck="false"
             />
-            <Box h="1.5rem">
+            <div className="h-6">
                 {state.state === "error"
-                    && <Text c="red">{state.error}</Text>}
+                    && <span className="text-destructive">{state.error}</span>}
                 {state.state === "calculating"
-                    && <Text>Calculating sizes...</Text>}
+                    && <span>Calculating sizes...</span>}
                 {state.state === "sizes"
-                    && <Text>
+                    && <span>
                         {`${state.sizes?.files ?? 1} file${(state.sizes?.files ?? 1) > 1 ? "s" : ""}, `}
                         {`${bytesToHumanReadableStr(state.sizes?.size ?? 0)}, `}
-                        {`${Math.ceil((state.sizes?.size ?? 0) / form.values.pieceLength)} pieces`}
-                    </Text>}
+                        {`${Math.ceil((state.sizes?.size ?? 0) / values.pieceLength)} pieces`}
+                    </span>}
                 {state.state === "generating"
                     && <ProgressBar
                         now={pieces.done}
@@ -332,16 +339,16 @@ export default function CreateTorrentForm() {
                         animate
                     />}
                 {state.state === "done"
-                    && <Text>{`Torrent infohash: ${state.hash}`}</Text>}
-            </Box>
-            <Group justify="center">
+                    && <span>{`Torrent infohash: ${state.hash}`}</span>}
+            </div>
+            <div className="flex justify-center gap-2">
                 {(["idle", "error", "calculating", "sizes"].includes(state.state))
-                    && <Button miw="10rem" onClick={onGenerate} disabled={state.state === "calculating"}>Generate</Button>}
+                    && <Button className="min-w-40" onClick={onGenerate} disabled={state.state === "calculating"}>Generate</Button>}
                 {state.state === "generating"
-                    && <Button miw="10rem" onClick={onCancel} color="red">Cancel</Button>}
+                    && <Button className="min-w-40" onClick={onCancel} variant="destructive">Cancel</Button>}
                 {state.state === "done"
-                    && <Button miw="10rem" onClick={onSave} color="green">Save</Button>}
-            </Group>
-        </Flex>
+                    && <Button className="min-w-40" onClick={onSave} variant="success">Save</Button>}
+            </div>
+        </div>
     );
 }

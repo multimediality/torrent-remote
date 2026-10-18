@@ -1,4 +1,6 @@
 .serverListContainer {
-    border: 1px solid var(--mantine-color-dark-3);
+    border: 1px solid var(--border-strong);
+    border-radius: 4px;
     flex-grow: 1;
+    min-width: 10rem;
 }

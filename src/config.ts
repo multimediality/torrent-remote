@@ -21,9 +21,11 @@ import React from "react";
 import type {
     SortingState, ColumnSizingState, ColumnVisibilityState, ColumnOrderState,
 } from "@tanstack/react-table";
-import type { MantineColorScheme, DefaultMantineColor } from "@mantine/core";
 import type { PriorityNumberType } from "rpc/transmission";
 const { readConfigText, writeConfigText } = await import(/* webpackChunkName: "taurishim" */"taurishim");
+
+export type ColorScheme = "light" | "dark" | "auto";
+export type ComputedColorScheme = "light" | "dark";
 
 export interface ServerConnection {
     url: string,
@@ -115,7 +117,7 @@ export type DateFormatOption = typeof DateFormatOptions[number];
 export type TimeFormatOption = typeof TimeFormatOptions[number];
 
 export interface ColorSetting {
-    color: DefaultMantineColor,
+    color: string, // palette color name, see palette.ts
     shade: number,
     computed: string,
 }
@@ -150,7 +152,7 @@ interface Settings {
         fontSize: number,
     },
     interface: {
-        theme: MantineColorScheme,
+        theme: ColorScheme,
         tables: Record<TableName, TableSettings>,
         sashSizes: Record<SplitType, [number, number]>,
         filterSections: SectionsVisibility<FilterSectionName>,
@@ -390,7 +392,7 @@ export class Config {
         return this.values.interface.theme;
     }
 
-    setTheme(value: MantineColorScheme) {
+    setTheme(value: ColorScheme) {
         this.values.interface.theme = value;
     }
 

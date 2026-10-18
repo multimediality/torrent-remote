@@ -22,9 +22,13 @@ import type { ServerConfig } from "../config";
 import React, { useCallback, useContext, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 import * as Icon from "react-bootstrap-icons";
 import type { ClientManager } from "../clientmanager";
-import { ActionIcon, Menu, Tabs } from "@mantine/core";
-import { useHotkeys } from "@mantine/hooks";
+import { useHotkeys } from "hooks";
 import classes from "./servertabs.module.css";
+import { Tabs, TabsList, TabsTrigger } from "./ui/tabs";
+import { Button } from "./ui/button";
+import {
+    DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger,
+} from "./ui/dropdown-menu";
 
 const { appWindow, invoke } = await import(/* webpackChunkName: "taurishim" */"taurishim");
 
@@ -156,48 +160,48 @@ export const ServerTabs = React.forwardRef<ServerTabsRef, ServerTabsProps>(funct
 
     return (
         <Tabs
-            variant="outline"
-            radius="lg"
             value={String(tabs.currentTab)}
-            onChange={(value) => { switchTab(Number(value)); }}
-            classNames={classes}
+            onValueChange={(value) => { switchTab(Number(value)); }}
             style={props.visible ? undefined : { display: "none" }}
         >
-            <Tabs.List px="sm">
+            <TabsList className={classes.list}>
                 {tabs.openTabs.map((name, index) =>
-                    <Tabs.Tab
+                    <TabsTrigger
                         key={index}
                         value={String(index)}
-                        rightSection={
-                            <Icon.XLg
-                                size="1.1rem"
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    e.preventDefault();
-                                    closeTab(index);
-                                }}
-                            />
-                        }
+                        className={classes.tab}
                     >
-                        {name}
-                    </Tabs.Tab>)}
+                        <span className={classes.tabLabel}>{name}</span>
+                        <span
+                            role="button"
+                            aria-label={`Close ${name}`}
+                            className={classes.tabSection}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                e.preventDefault();
+                                closeTab(index);
+                            }}
+                        >
+                            <Icon.XLg size="1.1rem" />
+                        </span>
+                    </TabsTrigger>)}
                 {unopenedTabs.length > 0
-                    ? <Menu shadow="md" width={200} position="bottom-start">
-                        <Menu.Target>
-                            <ActionIcon variant="subtle" color="secondaryColorName" my="auto">
+                    ? <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon-md" className="my-auto">
                                 <Icon.PlusLg size="1.1rem" />
-                            </ActionIcon>
-                        </Menu.Target>
+                            </Button>
+                        </DropdownMenuTrigger>
 
-                        <Menu.Dropdown>
-                            <Menu.Label>Connect</Menu.Label>
+                        <DropdownMenuContent align="start" className="w-[200px]">
+                            <DropdownMenuLabel>Connect</DropdownMenuLabel>
                             {unopenedTabs.map((tab) =>
-                                <Menu.Item key={tab} onClick={() => { openTab(tab); }}>{tab}</Menu.Item>)}
-                        </Menu.Dropdown>
-                    </Menu>
+                                <DropdownMenuItem key={tab} onClick={() => { openTab(tab); }}>{tab}</DropdownMenuItem>)}
+                        </DropdownMenuContent>
+                    </DropdownMenu>
                     : <></>}
                 {props.children}
-            </Tabs.List>
+            </TabsList>
         </Tabs>
     );
 });

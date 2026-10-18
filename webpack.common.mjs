@@ -156,9 +156,9 @@ export default (mode) => ({
                     test: /[\\/]node_modules[\\/](react|react-dom)[\\/]/,
                     name: "vendors/react",
                 },
-                mantine: {
-                    test: /[\\/]node_modules[\\/]@mantine[\\/]/,
-                    name: "vendors/mantine",
+                radix: {
+                    test: /[\\/]node_modules[\\/](radix-ui|@radix-ui)[\\/]/,
+                    name: "vendors/radix",
                 },
                 tanstack: {
                     test: /[\\/]node_modules[\\/]@tanstack[\\/]/,
@@ -196,7 +196,7 @@ export default (mode) => ({
             mode === "production"
                 ? new CssMinimizerPlugin({
                     minimizerOptions: {
-                        // postcss-calc can not parse Mantine's nested calc() fallbacks
+                        // postcss-calc can not parse nested calc() with css variables (Tailwind tokens)
                         preset: ["default", { calc: false }],
                     },
                 })

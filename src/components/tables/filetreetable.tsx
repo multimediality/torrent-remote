@@ -29,11 +29,17 @@ import { ProgressBar } from "../progressbar";
 import * as Icon from "react-bootstrap-icons";
 import type { TrguiTableFeatures, TrguiTableRef } from "./common";
 import { EditableNameField, TrguiTable } from "./common";
-import { ActionIcon, Badge, Box, Checkbox, Flex, Loader, Menu, Text, TextInput, useComputedColorScheme } from "@mantine/core";
 import { refreshFileTree, useMutateTorrent, useMutateTorrentPath } from "queries";
-import { notifications } from "@mantine/notifications";
+import { notifications } from "notifications";
+import { useComputedColorScheme } from "components/theme";
+import { Badge } from "components/ui/badge";
+import { Button } from "components/ui/button";
+import { Checkbox } from "components/ui/checkbox";
+import { Loader } from "components/ui/loader";
+import { TextInput } from "components/ui/fields";
+import { Palette, paletteColor } from "palette";
 import type { ContextMenuInfo } from "components/contextmenu";
-import { ContextMenu, useContextMenu } from "components/contextmenu";
+import { ContextMenu, MenuDivider, MenuItem, useContextMenu } from "components/contextmenu";
 import { useHotkeysContext } from "hotkeys";
 import debounce from "lodash-es/debounce";
 import { useServerRpcVersion } from "rpc/torrent";
@@ -117,28 +123,28 @@ function NameField(props: TableFieldProps) {
             extensionLength={extensionLength}
             onUpdate={(props.treeName === "filetree" && rpcVersion >= 15) ? updatePath : undefined}
         >
-            <Box style={{ width: `${props.entry.level * 1.6}rem`, flexShrink: 0 }} />
-            <Box w="1.4rem" mx="auto" style={{ flexShrink: 0 }}>
+            <div style={{ width: `${props.entry.level * 1.6}rem`, flexShrink: 0 }} />
+            <div className="mx-auto flex w-[1.4rem] shrink-0 items-center justify-center">
                 {props.entry.wantedUpdating
-                    ? <Loader size="1.2rem" color={colorScheme === "dark" ? "cyan.4" : "cyan.9"} />
+                    ? <Loader size="1.2rem" color={colorScheme === "dark" ? Palette.cyan[4] : Palette.cyan[9]} />
                     : <Checkbox
                         checked={props.entry.want === true || props.entry.want === undefined}
                         indeterminate={props.entry.want === undefined}
-                        onChange={(e) => {
-                            props.onCheckboxChange(props.entry.fullpath, e.currentTarget.checked);
+                        onCheckedChange={(checked) => {
+                            props.onCheckboxChange(props.entry.fullpath, checked === true);
                             refreshFileTree(props.treeName);
                         }}
                         onClick={(e) => { e.stopPropagation(); }}
                         onDoubleClick={(e) => { e.stopPropagation(); }}
                     />}
-            </Box>
-            <Box ml="xs" className="icon-container">
+            </div>
+            <div className="icon-container ml-1">
                 {isDir
                     ? props.row.getIsExpanded()
                         ? <Icon.DashSquare size="1.1rem" onClick={onToggleExpand} style={{ cursor: "pointer" }} />
                         : <Icon.PlusSquare size="1.1rem" onClick={onToggleExpand} style={{ cursor: "pointer" }} />
                     : <FileIcon name={props.entry.name} />}
-            </Box>
+            </div>
         </EditableNameField>
     );
 }
@@ -165,10 +171,9 @@ function PercentBarField(props: TableFieldProps) {
 
 function PriorityField(props: TableFieldProps) {
     const priority = props.entry.priority;
+    const color = priority === undefined ? undefined : PriorityColors.get(priority);
     return <Badge
-        radius="md"
-        variant="filled"
-        bg={priority === undefined ? "gray" : PriorityColors.get(priority)}
+        style={{ backgroundColor: color === undefined ? Palette.gray[6] : paletteColor(color) }}
     >
         {priority === undefined ? "mixed" : PriorityStrings.get(priority)}
     </Badge>;
@@ -280,25 +285,27 @@ function SearchBox({ setSearchTerms }: {
     }, [debouncedSetSearchTerms]);
 
     return (
-        <Box>
+        <div>
             <TextInput
                 ref={searchRef}
                 leftSection={<Icon.Search size="1rem" />}
-                rightSection={<ActionIcon variant="subtle" onClick={onSearchClear} title="Clear">
-                    <Icon.XLg size="1rem" color="var(--mantine-color-red-6)" />
-                </ActionIcon>}
+                rightSection={<Button
+                    variant="ghost"
+                    size="icon-xs"
+                    onClick={onSearchClear}
+                    title="Clear"
+                >
+                    <Icon.XLg size="1rem" color={Palette.red[6]} />
+                </Button>}
                 placeholder="search files"
                 onInput={onSearchInput}
-                classNames={{
-                    root: classes.searchRoot,
-                    input: classes.searchInput,
-                }}
+                inputClassName={classes.searchInput}
                 autoComplete="off"
                 autoCorrect="off"
                 autoCapitalize="off"
                 spellCheck="false"
             />
-        </Box>
+        </div>
     );
 }
 
@@ -411,11 +418,9 @@ export function FileTreeTable(props: FileTreeTableProps) {
     }, config.values.interface.showFilesSearchBox);
 
     return (
-        <Flex
-            w="100%"
-            h="100%"
+        <div
+            className="flex h-full w-full flex-col"
             onContextMenu={handler}
-            direction="column"
         >
             {props.brief === true
                 ? <></>
@@ -445,7 +450,7 @@ export function FileTreeTable(props: FileTreeTableProps) {
                 }}
                 />
             </div>
-        </Flex>
+        </div>
     );
 }
 
@@ -533,84 +538,84 @@ function FiletreeContextMenu(props: {
     return (
         <ContextMenu contextMenuInfo={props.contextMenuInfo} setContextMenuInfo={props.setContextMenuInfo}>
             {TAURI && <>
-                <Menu.Item
+                <MenuItem
                     onClick={() => { onOpen(false); }}
                     leftSection={<Icon.BoxArrowUpRight size="1.1rem" />}
                     disabled={props.currentRow === ""}
                 >
-                    <Text fw="bold">Open</Text>
-                </Menu.Item>
-                <Menu.Item
+                    <span className="font-bold">Open</span>
+                </MenuItem>
+                <MenuItem
                     onClick={() => { onOpen(true); }}
                     leftSection={<Icon.Folder2Open size="1.1rem" />}
                     disabled={props.currentRow === ""}
                 >
-                    <Text>Open folder</Text>
-                </Menu.Item>
-                <Menu.Divider />
+                    Open folder
+                </MenuItem>
+                <MenuDivider />
             </>}
-            <Menu.Item
+            <MenuItem
                 onClick={() => { setPriority("priority-high"); }}
                 leftSection={<Icon.CircleFill color="tomato" size="1.1rem" />}
                 disabled={props.selected.length === 0}
             >
                 High priority
-            </Menu.Item>
-            <Menu.Item
+            </MenuItem>
+            <MenuItem
                 onClick={() => { setPriority("priority-normal"); }}
                 leftSection={<Icon.CircleFill color="seagreen" size="1.1rem" />}
                 disabled={props.selected.length === 0}
             >
                 Normal priority
-            </Menu.Item>
-            <Menu.Item
+            </MenuItem>
+            <MenuItem
                 onClick={() => { setPriority("priority-low"); }}
                 leftSection={<Icon.CircleFill color="gold" size="1.1rem" />}
                 disabled={props.selected.length === 0}
             >
                 Low priority
-            </Menu.Item>
-            <Menu.Divider />
-            <Menu.Item
+            </MenuItem>
+            <MenuDivider />
+            <MenuItem
                 onClick={() => { setWanted(true); }}
-                leftSection={<Checkbox checked readOnly />}
+                leftSection={<Checkbox checked tabIndex={-1} className="pointer-events-none" />}
                 disabled={props.selected.length === 0}
             >
                 Set wanted
-            </Menu.Item>
-            <Menu.Item
+            </MenuItem>
+            <MenuItem
                 onClick={() => { setWanted(false); }}
-                leftSection={<Checkbox readOnly />}
+                leftSection={<Checkbox checked={false} tabIndex={-1} className="pointer-events-none" />}
                 disabled={props.selected.length === 0}
             >
                 Set unwanted
-            </Menu.Item>
-            <Menu.Divider />
-            <Menu.Item
+            </MenuItem>
+            <MenuDivider />
+            <MenuItem
                 onClick={() => { props.setExpanded?.(true); }}
                 leftSection={<Icon.PlusSquare size="1.1rem" />}
             >
                 Expand all
-            </Menu.Item>
-            <Menu.Item
+            </MenuItem>
+            <MenuItem
                 onClick={() => { props.setExpanded?.(false); }}
                 leftSection={<Icon.DashSquare size="1.1rem" />}
             >
                 Collapse all
-            </Menu.Item>
-            <Menu.Divider />
-            <Menu.Item
+            </MenuItem>
+            <MenuDivider />
+            <MenuItem
                 onClick={props.toggleFileSearchBox}
                 leftSection={<Icon.Search size="1.1rem" />}
             >
                 Toggle search
-            </Menu.Item>
-            <Menu.Item
+            </MenuItem>
+            <MenuItem
                 onClick={toggleFlatFileTree}
-                leftSection={<Checkbox checked={!flatFileTree} readOnly />}
+                leftSection={<Checkbox checked={!flatFileTree} tabIndex={-1} className="pointer-events-none" />}
             >
                 Show as tree
-            </Menu.Item>
+            </MenuItem>
         </ContextMenu>
     );
 }

@@ -18,14 +18,13 @@
  */
 
 import React, { lazy, Suspense, useEffect } from "react";
-import "@mantine/core/styles.css";
 import { createRoot } from "react-dom/client";
 import { suppressNativeContextMenu } from "trutil";
 const { appWindow } = await import(/* webpackChunkName: "taurishim" */"taurishim");
 
 const CreateTorrentForm = lazy(async () => await import(/* webpackChunkName: "createtorrentform" */ "components/createtorrentform"));
-const CustomMantineProvider = lazy(
-    async () => await import("components/mantinetheme"));
+const ThemeProvider = lazy(
+    async () => await import("components/theme"));
 
 // The window is created hidden (see makeCreateTorrentView). RevealWindow is
 // rendered next to the form inside the Suspense boundary, so it mounts only
@@ -45,10 +44,10 @@ function run() {
     app.render(
         <React.StrictMode>
             <Suspense fallback={<div />}>
-                <CustomMantineProvider>
+                <ThemeProvider>
                     <CreateTorrentForm />
                     <RevealWindow />
-                </CustomMantineProvider>
+                </ThemeProvider>
             </Suspense>
         </React.StrictMode>,
     );

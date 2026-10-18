@@ -1,6 +1,12 @@
 .splitLayoutContainer {
     flex-grow: 1;
-    & :global(.gutter) {
-        background-color: light-dark(var(--mantine-color-gray-3), var(--mantine-color-gray-7));
-    }
+    min-height: 0;
+}
+
+.splitLayoutContainer :global(.gutter) {
+    background-color: #dee2e6;
+}
+
+:global(.dark) .splitLayoutContainer :global(.gutter) {
+    background-color: #495057;
 }

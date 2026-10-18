@@ -16,8 +16,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { Button } from "@mantine/core";
-import { notifications } from "@mantine/notifications";
+import { Button } from "components/ui/button";
+import { notifications } from "notifications";
 import type { Update } from "@tauri-apps/plugin-updater";
 import React from "react";
 
@@ -65,7 +65,7 @@ export async function checkForUpdates(manual: boolean) {
         id: NOTIFICATION_ID,
         title: `Torrent Remote ${update.version} is available`,
         message: (
-            <Button size="xs" mt="xs" onClick={() => { void installUpdate(update); }}>
+            <Button size="xs" className="mt-1" onClick={() => { void installUpdate(update); }}>
                 Download and restart
             </Button>
         ),

@@ -17,28 +17,6 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-html {
-    font-size: var(--font-size, 1em);
-}
-
-html,
-body {
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-    color: var(--body-color, var(--mantine-color-text));
-    background-color: var(--body-bg-color, var(--mantine-color-body));
-}
-
-svg,
-img {
-    vertical-align: middle;
-}
-
-svg:not(:root) {
-    overflow: visible;
-}
-
 .icon-container {
     flex-shrink: 0;
     display: contents;
@@ -77,32 +55,23 @@ svg:not(:root) {
 }
 
 ::-webkit-scrollbar-track {
-    background-color: light-dark(
-        alpha(var(--mantine-color-gray-5), 0.4),
-        alpha(var(--mantine-color-gray-7), 0.4)
-    );
+    background-color: color-mix(in srgb, var(--scrollbar) 40%, transparent);
 }
 
 ::-webkit-scrollbar-thumb {
-    background-color: light-dark(
-        var(--mantine-color-gray-5),
-        var(--mantine-color-gray-7)
-    );
+    background-color: var(--scrollbar);
     border-radius: 0.375em;
     min-height: 3rem;
     min-width: 3rem;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background-color: var(--mantine-color-gray-6);
+    background-color: var(--scrollbar-hover);
     border: 1px solid #77777744;
 }
 
 ::-webkit-scrollbar-corner {
-    background-color: light-dark(
-        alpha(var(--mantine-color-gray-5), 0.5),
-        alpha(var(--mantine-color-gray-7), 0.5)
-    );
+    background-color: color-mix(in srgb, var(--scrollbar) 50%, transparent);
 }
 
 .scrollable {
@@ -137,14 +106,15 @@ svg:not(:root) {
     color: white;
 }
 
+.selected [data-slot="checkbox"] {
+    box-shadow: inset 0 0 3px 0 white;
+}
+
 .list-delete-icon {
-    height: initial;
-    width: initial;
-    min-height: initial;
-    min-width: initial;
     display: none;
 }
 
-.mantine-Menu-item:hover .list-delete-icon {
-    display: block;
+[data-slot="dropdown-menu-item"]:hover .list-delete-icon,
+[data-slot="dropdown-menu-item"]:focus .list-delete-icon {
+    display: inline-flex;
 }

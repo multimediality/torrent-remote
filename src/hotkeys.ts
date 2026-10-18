@@ -17,7 +17,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { useHotkeys } from "@mantine/hooks";
+import { useHotkeys } from "hooks";
 import React, { useContext } from "react";
 
 export interface HotkeyHandlers {

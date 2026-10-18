@@ -17,55 +17,60 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import type { MantineSize } from "@mantine/core";
-import { ActionIcon, useMantineColorScheme } from "@mantine/core";
 import * as Icon from "react-bootstrap-icons";
 import FontSizeIcon from "svg/icons/fontsize.svg";
 import React from "react";
 import { VersionModal } from "components/modals/version";
-import { useDisclosure, useHotkeys } from "@mantine/hooks";
+import { useDisclosure, useHotkeys } from "hooks";
 import { modKeyString } from "trutil";
 import { useFontSize } from "themehooks";
+import { useColorScheme } from "components/theme";
+import { Button } from "components/ui/button";
 
-export function ColorSchemeToggle(props: { sz?: string, btn?: MantineSize }) {
-    const { colorScheme, toggleColorScheme } = useMantineColorScheme();
-    const dark = colorScheme === "dark";
+export type IconButtonSize = "md" | "lg";
+
+function buttonSize(size?: IconButtonSize) {
+    return size === "lg" ? "icon-lg" : "icon-sm";
+}
+
+export function ColorSchemeToggle(props: { sz?: string, btn?: IconButtonSize }) {
+    const { computedColorScheme, toggleColorScheme } = useColorScheme();
+    const dark = computedColorScheme === "dark";
 
     useHotkeys([
         ["mod + U", () => { toggleColorScheme(); }],
     ]);
 
     return (
-        <ActionIcon
-            variant="default"
-            size={props.btn}
+        <Button
+            variant="outline"
+            size={buttonSize(props.btn)}
             onClick={() => { toggleColorScheme(); }}
             title={`Toggle color scheme (${modKeyString()} + U)`}
-            my="auto"
+            className="my-auto"
         >
             {dark
                 ? <Icon.Sun size={props.sz} color="yellow" />
                 : <Icon.MoonStars size={props.sz} color="blue" />}
-        </ActionIcon>
+        </Button>
     );
 }
 
-export function ShowVersion(props: { sz?: string, btn?: MantineSize }) {
+export function ShowVersion(props: { sz?: string, btn?: IconButtonSize }) {
     const [showVersionModal, { open: openVersionModal, close: closeVersionModal }] = useDisclosure(false);
 
     return (
         <>
             <VersionModal opened={showVersionModal} close={closeVersionModal} />
-            <ActionIcon
-                variant="subtle"
-                size={props.btn}
+            <Button
+                variant="ghost"
+                size={buttonSize(props.btn)}
                 onClick={openVersionModal}
                 title="Show version information"
-                ml="auto"
-                my="auto"
+                className="my-auto ml-auto"
             >
                 <Icon.InfoCircle size={props.sz} />
-            </ActionIcon>
+            </Button>
         </>
     );
 }
@@ -78,14 +83,14 @@ export function FontSizeToggle() {
     ]);
 
     return (
-        <ActionIcon
-            variant="default"
-            size="lg"
+        <Button
+            variant="outline"
+            size="icon-lg"
             onClick={() => { toggle(); }}
             title={`Toggle font size (${modKeyString()} + =)`}
-            my="auto"
+            className="my-auto"
         >
             <FontSizeIcon width="1.1rem" height="1.1rem" fill="currentColor" />
-        </ActionIcon>
+        </Button>
     );
 }

@@ -28,8 +28,8 @@ const { TAURI, appWindow, invoke } = await import(/* webpackChunkName: "taurishi
 
 const TauriApp = lazy(async () => await import("components/app"));
 const WebApp = lazy(async () => await import("components/webapp"));
-const CustomMantineProvider = lazy(
-    async () => await import("components/mantinetheme"));
+const ThemeProvider = lazy(
+    async () => await import("components/theme"));
 
 async function onCloseRequested(app: Root, config: Config) {
     await config.save();
@@ -148,10 +148,10 @@ async function run(config: Config) {
             <ConfigContext.Provider value={config}>
                 {TAURI && <RevealWindow />}
                 <Suspense fallback={<Loader />}>
-                    <CustomMantineProvider>
+                    <ThemeProvider>
                         {TAURI && <TauriApp />}
                         {!TAURI && <WebApp />}
-                    </CustomMantineProvider>
+                    </ThemeProvider>
                 </Suspense>
             </ConfigContext.Provider>
         </React.StrictMode>,

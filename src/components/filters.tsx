@@ -17,16 +17,16 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import React, { useCallback, useContext, useEffect, useMemo, useReducer, useRef, useState } from "react";
+import React, { useCallback, useContext, useEffect, useMemo, useReducer, useState } from "react";
 import type { Torrent } from "../rpc/torrent";
 import { Status } from "../rpc/transmission";
 import * as Icon from "react-bootstrap-icons";
 import * as StatusIcons from "./statusicons";
 import type { FilterSectionName, SectionsVisibility, StatusFilterName } from "../config";
 import { ConfigContext, ServerConfigContext } from "../config";
-import { Box, Divider, Flex, Menu } from "@mantine/core";
 import { bytesToHumanReadableStr, eventHasModKey } from "trutil";
-import { useContextMenu } from "./contextmenu";
+import { MenuDivider, MenuItem, MenuSpacer, MenuSub, MenuSubContent, MenuSubTrigger, useContextMenu } from "./contextmenu";
+import { LabeledSeparator } from "./ui/separator";
 import { MemoSectionsContextMenu, getSectionsMap } from "./sectionscontextmenu";
 
 export interface TorrentFilter {
@@ -185,12 +185,9 @@ function filterOnKeyDown(event: React.KeyboardEvent<HTMLElement>) {
 }
 
 const FilterRow = React.memo(function FilterRow(props: FilterRowProps) {
-    return <Flex
-        align="center"
-        gap="sm"
-        px="xs"
+    return <div
         tabIndex={-1}
-        className={props.currentFilters.find((f) => f.id === props.id) !== undefined ? "selected" : ""}
+        className={`flex items-center gap-1.5 px-1 ${props.currentFilters.find((f) => f.id === props.id) !== undefined ? "selected" : ""}`}
         onClick={(event) => {
             props.setCurrentFilters({
                 verb: eventHasModKey(event) ? "toggle" : "set",
@@ -206,7 +203,7 @@ const FilterRow = React.memo(function FilterRow(props: FilterRowProps) {
             <div style={{ flexGrow: 1 }}></div>
             <div style={{ flexShrink: 0 }}>{`[${bytesToHumanReadableStr(props.stats.size, 1)}]`}</div>
         </>}
-    </Flex>;
+    </div>;
 });
 
 const LabelFilterRow = React.memo(function LabelFilterRow(props: Omit<FilterRowProps, "filter" | "id"> & { label: string }) {
@@ -290,12 +287,10 @@ function DirFilterRow(props: DirFilterRowProps) {
     }, [config.values.interface.recursiveDirectories, props.dir]);
 
     return (
-        <Flex
-            align="center"
-            gap="sm"
+        <div
             tabIndex={-1}
             style={{ paddingLeft: `${props.dir.level * 1.4 + 0.25}em`, cursor: "default" }}
-            className={props.currentFilters.find((f) => f.id === props.id) !== undefined ? "selected" : ""}
+            className={`flex items-center gap-1.5 ${props.currentFilters.find((f) => f.id === props.id) !== undefined ? "selected" : ""}`}
             onClick={(event) => {
                 props.setCurrentFilters({
                     verb: eventHasModKey(event) ? "toggle" : "set",
@@ -317,7 +312,7 @@ function DirFilterRow(props: DirFilterRowProps) {
                 <div style={{ flexGrow: 1 }}></div>
                 <div style={{ flexShrink: 0 }}>{size}</div>
             </>}
-        </Flex>
+        </div>
     );
 }
 
@@ -492,8 +487,6 @@ export const Filters = React.memo(function Filters({ torrents, currentFilters, s
 
     const [info, setInfo, handler] = useContextMenu();
 
-    const statusFiltersItemRef = useRef<HTMLButtonElement>(null);
-
     const onStatusFiltersSubmenuItemClick = useCallback((index: number) => {
         const filterName = statusFilters[index].name;
         const filterId = `status-${filterName}`;
@@ -524,8 +517,8 @@ export const Filters = React.memo(function Filters({ torrents, currentFilters, s
     }, [showSizes, forceRender]);
 
     return (
-        <Flex
-            direction="column"
+        <div
+            className="flex flex-col"
             onContextMenu={handler}
             style={{
                 width: "100%",
@@ -540,56 +533,48 @@ export const Filters = React.memo(function Filters({ torrents, currentFilters, s
                 setSections={setSections}
                 contextMenuInfo={info}
                 setContextMenuInfo={setInfo}
-                closeOnClickOutside
             >
-                <Menu.Divider />
-                <Menu.Sub openDelay={120} closeDelay={150}>
-                    <Menu.Sub.Target>
-                        <Menu.Sub.Item
-                            ref={statusFiltersItemRef}
-                            leftSection={<Box miw="1rem" />}
-                            rightSection={<Icon.ChevronRight size="12" style={{ marginRight: "-0.4rem" }} />}
-                            onMouseDown={(e) => { e.stopPropagation(); }}
-                        >
-                            Status filters
-                        </Menu.Sub.Item>
-                    </Menu.Sub.Target>
+                <MenuDivider />
+                <MenuSub>
+                    <MenuSubTrigger leftSection={<MenuSpacer />}>
+                        Status filters
+                    </MenuSubTrigger>
 
-                    <Menu.Sub.Dropdown>
+                    <MenuSubContent>
                         {statusFilters.map((f, index) =>
                             f.required !== true
-                            && <Menu.Item
+                            && <MenuItem
                                 key={f.name}
                                 onClick={() => { onStatusFiltersSubmenuItemClick(index); }}
-                                leftSection={statusFiltersVisibility[f.name] ? <Icon.Check size="1rem" /> : <Box miw="1rem" />}
+                                leftSection={statusFiltersVisibility[f.name] ? <Icon.Check size="1rem" /> : <MenuSpacer />}
                             >
                                 {f.name}
-                            </Menu.Item>)}
-                    </Menu.Sub.Dropdown>
-                </Menu.Sub>
+                            </MenuItem>)}
+                    </MenuSubContent>
+                </MenuSub>
 
-                <Menu.Divider />
-                <Menu.Item
-                    leftSection={compactDirectories ? <Icon.Check size="1rem" /> : <Box miw="1rem" />}
+                <MenuDivider />
+                <MenuItem
+                    leftSection={compactDirectories ? <Icon.Check size="1rem" /> : <MenuSpacer />}
                     onClick={onCompactDirectoriesClick}
                 >
                     Compact Directories
-                </Menu.Item>
-                <Menu.Item
-                    leftSection={recursiveDirectories ? <Icon.Check size="1rem" /> : <Box miw="1rem" />}
+                </MenuItem>
+                <MenuItem
+                    leftSection={recursiveDirectories ? <Icon.Check size="1rem" /> : <MenuSpacer />}
                     onClick={onRecursiveDirectoriesClick}
                 >
                     Recursive Directories
-                </Menu.Item>
-                <Menu.Item
-                    leftSection={showSizes ? <Icon.Check size="1rem" /> : <Box miw="1rem" />}
+                </MenuItem>
+                <MenuItem
+                    leftSection={showSizes ? <Icon.Check size="1rem" /> : <MenuSpacer />}
                     onClick={onShowSizesClick}
                 >
                     Show sizes
-                </Menu.Item>
+                </MenuItem>
             </MemoSectionsContextMenu>
             {sections[sectionsMap.Status].visible && <div style={{ order: sectionsMap.Status }}>
-                <Divider mx="sm" label="Status" labelPosition="center" />
+                <LabeledSeparator className="mx-1.5" label="Status" />
                 {statusFilters.map((f) =>
                     (f.required === true || statusFiltersVisibility[f.name])
                     && <FilterRow
@@ -603,12 +588,7 @@ export const Filters = React.memo(function Filters({ torrents, currentFilters, s
                     />)}
             </div>}
             {sections[sectionsMap.Directories].visible && <div style={{ order: sectionsMap.Directories }}>
-                <Divider
-                    mx="sm"
-                    mt="md"
-                    label="Directories"
-                    labelPosition="center"
-                />
+                <LabeledSeparator className="mx-1.5 mt-2" label="Directories" />
                 {dirs.map((d) =>
                     <DirFilterRow
                         key={`dir-${d.path}`}
@@ -620,12 +600,7 @@ export const Filters = React.memo(function Filters({ torrents, currentFilters, s
                     />)}
             </div>}
             {sections[sectionsMap.Labels].visible && <div style={{ order: sectionsMap.Labels }}>
-                <Divider
-                    mx="sm"
-                    mt="md"
-                    label="Labels"
-                    labelPosition="center"
-                />
+                <LabeledSeparator className="mx-1.5 mt-2" label="Labels" />
                 <FilterRow
                     id="nolabels"
                     filter={noLabelsFilter}
@@ -645,12 +620,7 @@ export const Filters = React.memo(function Filters({ torrents, currentFilters, s
                     />)}
             </div>}
             {sections[sectionsMap.Trackers].visible && <div style={{ order: sectionsMap.Trackers }}>
-                <Divider
-                    mx="sm"
-                    mt="md"
-                    label="Trackers"
-                    labelPosition="center"
-                />
+                <LabeledSeparator className="mx-1.5 mt-2" label="Trackers" />
                 {Object.keys(trackers).sort().map((tracker) =>
                     <TrackerFilterRow
                         key={`trackers-${tracker}-${renderKey}`}
@@ -661,6 +631,6 @@ export const Filters = React.memo(function Filters({ torrents, currentFilters, s
                         showSizes={showSizes}
                     />)}
             </div>}
-        </Flex>
+        </div>
     );
 });

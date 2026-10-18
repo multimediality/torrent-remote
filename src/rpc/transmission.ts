@@ -17,7 +17,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import type { ExtendedCustomColors } from "types/mantine";
+import type { PaletteColorRef } from "palette";
 
 // See https://github.com/transmission/transmission/blob/main/docs/rpc-spec.md
 // and https://github.com/transmission/transmission/blob/main/libtransmission/transmission.h
@@ -56,7 +56,7 @@ export const PriorityStrings = new Map<PriorityNumberType, string>([
     [1, "High"],
 ]);
 
-export const PriorityColors = new Map<PriorityNumberType, ExtendedCustomColors>([
+export const PriorityColors = new Map<PriorityNumberType, PaletteColorRef>([
     [-1, "yellow.6"],
     [0, "teal"],
     [1, "orange.7"],

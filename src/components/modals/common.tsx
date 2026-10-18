@@ -54,6 +54,8 @@ export interface HkModalProps extends React.PropsWithChildren {
     title?: React.ReactNode,
     size?: ModalSize,
     fullScreen?: boolean,
+    /** user can drag the bottom right corner to resize, within sensible limits */
+    resizable?: boolean,
     className?: string,
     bodyClassName?: string,
 }
@@ -62,7 +64,7 @@ export interface HkModalProps extends React.PropsWithChildren {
  * Dialog that suspends the application hotkeys while it is open. The first
  * element carrying `data-autofocus` receives focus when the dialog opens.
  */
-export function HkModal({ opened, onClose, title, size = "lg", fullScreen = false, className, bodyClassName, children }: HkModalProps) {
+export function HkModal({ opened, onClose, title, size = "lg", fullScreen = false, resizable = false, className, bodyClassName, children }: HkModalProps) {
     const hk = useHotkeysContext();
 
     useEffect(() => {
@@ -89,6 +91,7 @@ export function HkModal({ opened, onClose, title, size = "lg", fullScreen = fals
                     "max-h-[calc(100vh-2rem)]",
                     modalSizeClasses[size],
                     fullScreen && "top-0 left-0 h-screen max-h-none w-screen max-w-none translate-x-0 translate-y-0 rounded-none border-0",
+                    resizable && !fullScreen && "resize overflow-hidden min-h-[22rem] min-w-[34rem]",
                     className,
                 )}
                 onOpenAutoFocus={onOpenAutoFocus}
@@ -98,7 +101,7 @@ export function HkModal({ opened, onClose, title, size = "lg", fullScreen = fals
                         {title ?? "Dialog"}
                     </DialogTitle>
                 </DialogHeader>
-                <div className={cn("flex min-h-0 flex-col overflow-y-auto px-3 pb-3", bodyClassName)}>
+                <div className={cn("flex min-h-0 flex-col overflow-y-auto px-3 pb-3", resizable && "grow", bodyClassName)}>
                     {children}
                 </div>
             </DialogContent>
@@ -115,7 +118,10 @@ export function SaveCancelModal({ onSave, onClose, children, saveLoading, ...oth
     return (
         <HkModal onClose={onClose} {...other}>
             <Separator className="my-1.5" />
-            {children}
+            {/* grows when the dialog is resizable so the buttons stay at the bottom */}
+            <div className="flex min-h-0 grow flex-col overflow-y-auto">
+                {children}
+            </div>
             <Separator className="my-1.5" />
             <div className="flex justify-center gap-2">
                 <Button onClick={onSave} data-autofocus>

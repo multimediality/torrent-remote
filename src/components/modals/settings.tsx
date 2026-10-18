@@ -429,6 +429,7 @@ export function AppSettingsModal(props: AppSettingsModalProps) {
         <SaveCancelModal
             opened={props.opened}
             size="lg"
+            resizable
             onClose={props.close}
             onSave={onSave}
             title="Application Settings"

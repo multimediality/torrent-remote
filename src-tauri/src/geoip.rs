@@ -46,12 +46,12 @@ pub async fn lookup(app: &AppHandle, ips: Vec<IpAddr>) -> Vec<LookupResult> {
             match maxminddb::Reader::open_readfile(&dbip_path) {
                 Ok(db) => *reader = Some(db),
                 Err(_) => {
-                    println!("{} is invalid", dbip_path.as_path().display());
+                    log::warn!("{} is invalid", dbip_path.as_path().display());
                     return vec![];
                 }
             }
         } else {
-            println!("{} does not exist", dbip_path.as_path().display());
+            log::warn!("{} does not exist", dbip_path.as_path().display());
             return vec![];
         }
     }

@@ -38,7 +38,7 @@ fn register_app_class() -> std::io::Result<()> {
             let icon = format!("\"{exe}\" \"%1\"");
             key.set_value("", &icon)?;
         }
-        Err(e) => println!("Error getting exe path: {e}"),
+        Err(e) => log::error!("Error getting exe path: {e}"),
     }
     Ok(())
 }
@@ -74,7 +74,7 @@ fn register_magnet_class() -> std::io::Result<()> {
             let icon = format!("\"{exe}\" \"%1\"");
             key.set_value("", &icon)?;
         }
-        Err(e) => println!("Error getting exe path: {e}"),
+        Err(e) => log::error!("Error getting exe path: {e}"),
     }
     Ok(())
 }
@@ -93,7 +93,7 @@ fn register_autorun(run: bool) -> std::io::Result<()> {
                 key.delete_value(APP_NAME)?;
             }
         }
-        Err(e) => println!("Error getting exe path: {e}"),
+        Err(e) => log::error!("Error getting exe path: {e}"),
     }
     Ok(())
 }
@@ -112,7 +112,7 @@ fn check_autorun() -> bool {
                 }
             }
         }
-        Err(e) => println!("Error getting exe path: {e}"),
+        Err(e) => log::error!("Error getting exe path: {e}"),
     }
     false
 }
@@ -121,41 +121,41 @@ fn check_autorun() -> bool {
 pub fn app_integration_impl(mode: String) -> bool {
     match mode.as_str() {
         "torrent" => {
-            println!("Associating .torrent files with the app");
+            log::info!("Associating .torrent files with the app");
             if let Err(e) = register_app_class() {
-                println!("Error writing to registry: {e}");
+                log::error!("Error writing to registry: {e}");
             }
             if let Err(e) = register_torrent_class() {
-                println!("Error writing to registry: {e}");
+                log::error!("Error writing to registry: {e}");
             }
         }
         "magnet" => {
-            println!("Associating magnet links with the app");
+            log::info!("Associating magnet links with the app");
             if let Err(e) = register_app_class() {
-                println!("Error writing to registry: {e}");
+                log::error!("Error writing to registry: {e}");
             }
             if let Err(e) = register_magnet_class() {
-                println!("Error writing to registry: {e}");
+                log::error!("Error writing to registry: {e}");
             }
         }
         "autostart" => {
-            println!("Adding app to auto start");
+            log::info!("Adding app to auto start");
             if let Err(e) = register_autorun(true) {
-                println!("Error writing to registry: {e}");
+                log::error!("Error writing to registry: {e}");
             }
         }
         "noautostart" => {
-            println!("Removing app from auto start");
+            log::info!("Removing app from auto start");
             if let Err(e) = register_autorun(false) {
-                println!("Error writing to registry: {e}");
+                log::error!("Error writing to registry: {e}");
             }
         }
         "getautostart" => {
-            println!("Checking auto start");
+            log::info!("Checking auto start");
             return check_autorun();
         }
         _ => {
-            println!("Bad app_integration call");
+            log::warn!("Bad app_integration call");
         }
     }
     false

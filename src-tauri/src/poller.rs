@@ -200,7 +200,7 @@ async fn poll(
                     Err(Some(session_str))
                 }
             } else {
-                println!(
+                log::warn!(
                     "Unexpected status code during polling: {:?}",
                     response.status()
                 );
@@ -208,7 +208,7 @@ async fn poll(
             }
         }
         Err(e) => {
-            println!("Error during polling: {e:?}");
+            log::warn!("Error during polling: {e:?}");
             Err(None)
         }
     }

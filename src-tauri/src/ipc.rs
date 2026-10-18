@@ -352,7 +352,7 @@ async fn http_server(app: AppHandle, rx_stop: Receiver<()>, listener: TcpListene
                 let (stream, _) = match conn {
                     Ok(conn) => conn,
                     Err(e) => {
-                        eprintln!("tcp accept error: {e}");
+                        log::warn!("tcp accept error: {e}");
                         continue;
                     }
                 };
@@ -363,7 +363,7 @@ async fn http_server(app: AppHandle, rx_stop: Receiver<()>, listener: TcpListene
 
                 tokio::spawn(async move {
                     if let Err(err) = conn.await {
-                        eprintln!("connection error: {err}");
+                        log::debug!("connection error: {err}");
                     }
                 });
             },
@@ -378,10 +378,10 @@ async fn http_server(app: AppHandle, rx_stop: Receiver<()>, listener: TcpListene
     tokio::select! {
         biased;
         _ = graceful.shutdown() => {
-            eprintln!("Gracefully shutdown!");
+            log::debug!("Proxy server shut down");
         },
         _ = tokio::time::sleep(Duration::from_secs(10)) => {
-            eprintln!("Waited 10 seconds for graceful shutdown, aborting...");
+            log::warn!("Waited 10 seconds for graceful shutdown, aborting...");
         }
     }
 }

@@ -64,16 +64,16 @@ pub async fn process_response(
     match serde_json::from_slice::<ServerResponse>(response) {
         Ok(server_response) => {
             if server_response.result != "success" {
-                println!("Server returned error {}", server_response.result);
+                log::warn!("Server returned error {}", server_response.result);
             }
             match server_response.arguments {
                 Some(Arguments { torrents }) => {
                     process_torrents(app, torrents, original_url, toast, sound).await;
                 }
-                None => println!("Server returned success but no arguments!"),
+                None => log::warn!("Server returned success but no arguments!"),
             }
         }
-        Err(e) => println!("Failed to parse server response {e:?}"),
+        Err(e) => log::warn!("Failed to parse server response {e:?}"),
     };
 
     Ok(())
@@ -143,6 +143,6 @@ fn show_notification(app: &AppHandle, name: &str) {
         .body(name)
         .show()
     {
-        println!("Cannot show notification: {e:?}");
+        log::warn!("Cannot show notification: {e:?}");
     }
 }

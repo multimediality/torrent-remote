@@ -83,7 +83,7 @@ pub async fn read_file(path: String) -> Result<TorrentReadResult, String> {
 
     match Torrent::read_from_bytes(&read_result.as_ref().unwrap()[..]) {
         Err(e) => {
-            println!("Failed to parse torrent {:?}", e.to_string());
+            log::warn!("Failed to parse torrent {path:?}: {e}");
             Err(format!("Failed to parse torrent {path:?}"))
         }
         Ok(torrent) => {
@@ -124,7 +124,7 @@ pub async fn read_file(path: String) -> Result<TorrentReadResult, String> {
 #[tauri::command]
 pub async fn remove_file(path: String) {
     if path.to_lowercase().ends_with(".torrent") && std::fs::remove_file(path.clone()).is_err() {
-        println!("Unable to remove file {path}");
+        log::warn!("Unable to remove file {path}");
     }
 }
 

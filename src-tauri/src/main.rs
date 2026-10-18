@@ -27,6 +27,7 @@ use geoip::MmdbReaderHandle;
 use poller::PollerHandle;
 use tauri::{async_runtime, App, AppHandle, Listener, Manager, State};
 use tauri_plugin_cli::CliExt;
+use tauri_plugin_log::{RotationStrategy, Target, TargetKind, TimezoneStrategy};
 use tauri_plugin_window_state::{AppHandleExt, StateFlags};
 use tokio::sync::RwLock;
 use torrentcache::TorrentCacheHandle;
@@ -72,7 +73,38 @@ pub fn window_state_flags() -> StateFlags {
     StateFlags::all() & !StateFlags::VISIBLE
 }
 
+/// Logging through tauri-plugin-log: every build writes torrent-remote.log
+/// to the app log directory, dev builds also print to stdout. Third-party
+/// crates (tauri, hyper, reqwest, ...) are capped at info, this crate logs
+/// debug in dev builds.
+fn log_plugin<R: tauri::Runtime>() -> tauri::plugin::TauriPlugin<R> {
+    let own_level = if cfg!(debug_assertions) {
+        log::LevelFilter::Debug
+    } else {
+        log::LevelFilter::Info
+    };
+    let builder = tauri_plugin_log::Builder::new()
+        .clear_targets()
+        .target(Target::new(TargetKind::LogDir {
+            file_name: Some("torrent-remote".into()),
+        }))
+        .level(log::LevelFilter::Info)
+        .level_for("torrent_remote", own_level)
+        .rotation_strategy(RotationStrategy::KeepOne)
+        .max_file_size(1024 * 1024)
+        .timezone_strategy(TimezoneStrategy::UseLocal);
+    #[cfg(debug_assertions)]
+    let builder = builder.target(Target::new(TargetKind::Stdout));
+    builder.build()
+}
+
 fn setup(app: &mut App) -> Result<(), Box<dyn std::error::Error>> {
+    log::info!(
+        "{} {} starting",
+        app.package_info().name,
+        app.package_info().version
+    );
+
     let mut torrents: Vec<String> = vec![];
     match app.cli().matches() {
         Ok(matches) => {
@@ -91,9 +123,10 @@ fn setup(app: &mut App) -> Result<(), Box<dyn std::error::Error>> {
                     .collect();
             }
         }
-        Err(_) => {
-            println!("Unable to read cli args");
+        Err(e) => {
+            log::error!("Unable to read cli args: {e}");
             app.handle().exit(0);
+            return Ok(());
         }
     }
 
@@ -134,7 +167,7 @@ fn setup(app: &mut App) -> Result<(), Box<dyn std::error::Error>> {
             });
             tray::toggle_main_window(&app, None);
         } else {
-            eprintln!("Unable to start the local proxy server");
+            log::error!("Unable to start the local proxy server");
             app.exit(1);
             return;
         }
@@ -145,7 +178,7 @@ fn setup(app: &mut App) -> Result<(), Box<dyn std::error::Error>> {
 
         let app_clone = app.clone();
         app.listen("app-exit", move |_| {
-            println!("Exiting");
+            log::info!("Exiting");
             app_clone.exit(0);
         });
 
@@ -214,6 +247,7 @@ fn main() {
                 ipc::deliver_args(app, args);
             }
         }))
+        .plugin(log_plugin())
         .plugin(tauri_plugin_cli::init())
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_opener::init())

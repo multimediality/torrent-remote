@@ -101,24 +101,22 @@ jobs:
         with:
           args: --target ${{ matrix.platform.rust_target }} ${{ contains(github.ref_name, '-') && '--config {"bundle":{"targets":["app","appimage","deb","rpm","nsis"]}}' || '' }}
 
-      # Updater signatures, turned into latest.json by the publish job
-      - uses: actions/upload-artifact@v6
-        with:
-          name: ${{ matrix.platform.rust_target }}-sig
-          path: src-tauri/target/${{ matrix.platform.rust_target }}/release/bundle/**/*.sig
-
       - name: Git status and version
         run: |
           git status
           git describe --tags --dirty --always
           git diff
 
-      # macOS: the updater archive (the .app itself is a directory, the .sig is uploaded above)
+      # macOS: the updater archive and its signature (the .app itself is a
+      # directory). Other platforms get their .sig files from tauri-action's
+      # artifact list; the publish job turns the signatures into latest.json.
       - uses: actions/upload-artifact@v6
         if: matrix.platform.os == 'macos-latest'
         with:
           name: ${{ matrix.platform.rust_target }}
-          path: src-tauri/target/${{ matrix.platform.rust_target }}/release/bundle/macos/*.app.tar.gz
+          path: |
+            src-tauri/target/${{ matrix.platform.rust_target }}/release/bundle/macos/*.app.tar.gz
+            src-tauri/target/${{ matrix.platform.rust_target }}/release/bundle/macos/*.app.tar.gz.sig
 
       - uses: actions/upload-artifact@v6
         if: matrix.platform.os != 'macos-latest'

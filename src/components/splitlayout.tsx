@@ -17,7 +17,6 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { Box } from "@mantine/core";
 import type { SplitType } from "config";
 import { ConfigContext } from "config";
 import React, { useCallback, useContext } from "react";
@@ -58,7 +57,7 @@ export function SplitLayout({ mainSplit, left, right, bottom }: SplitLayoutProps
         </Split>;
 
     return (
-        <Box className={classes.splitLayoutContainer}>
+        <div className={classes.splitLayoutContainer}>
             {bottom === undefined
                 ? top
                 : <Split
@@ -72,6 +71,6 @@ export function SplitLayout({ mainSplit, left, right, bottom }: SplitLayoutProps
                     {top}
                     {bottom}
                 </Split>}
-        </Box>
+        </div>
     );
 }

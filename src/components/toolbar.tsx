@@ -17,7 +17,6 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { ActionIcon, Button, Flex, Kbd, Menu, TextInput, useComputedColorScheme } from "@mantine/core";
 import debounce from "lodash-es/debounce";
 import classes from "./toolbar.module.css";
 import clsx from "clsx";
@@ -27,15 +26,24 @@ import PriorityIcon from "svg/icons/priority.svg";
 import type { PriorityNumberType } from "rpc/transmission";
 import { BandwidthPriority } from "rpc/transmission";
 import { useTorrentAction, useMutateSession, useMutateTorrent } from "queries";
-import { notifications } from "@mantine/notifications";
+import { notifications } from "notifications";
 import type { TorrentActionMethodsType } from "rpc/client";
 import type { ModalCallbacks } from "./modals/servermodals";
 import type { HotkeyHandlers } from "hotkeys";
 import { useHotkeysContext } from "hotkeys";
-import { useHotkeys } from "@mantine/hooks";
+import { useHotkeys } from "hooks";
 import { modKeyString } from "trutil";
 import { useServerSelectedTorrents } from "rpc/torrent";
 import { ConfigContext } from "config";
+import { Palette } from "palette";
+import { useComputedColorScheme } from "./theme";
+import { Button } from "./ui/button";
+import { Kbd } from "./ui/kbd";
+import { TextInput } from "./ui/fields";
+import {
+    DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator,
+    DropdownMenuShortcut, DropdownMenuTrigger,
+} from "./ui/dropdown-menu";
 
 const { saveJsonFile, loadJsonFile } = await import(/* webpackChunkName: "taurishim" */"taurishim");
 
@@ -44,16 +52,15 @@ interface ToolbarButtonProps extends React.PropsWithChildren<React.ComponentProp
 }
 
 export const ToolbarButton = forwardRef<HTMLButtonElement, ToolbarButtonProps>(function ToolbarButton(
-    { children, depressed, ...other }: ToolbarButtonProps, ref,
+    { children, depressed, className, ...other }: ToolbarButtonProps, ref,
 ) {
     return (
         <Button
-            variant="light"
-            size="compact-sm"
-            h="2.5rem"
+            variant="ghost"
+            size="sm"
             {...other}
             ref={ref}
-            className={clsx(classes.toolbarButton, { [classes.toolbarButtonDepressed]: depressed })}
+            className={clsx(classes.toolbarButton, { [classes.toolbarButtonDepressed]: depressed }, className)}
         >
             {children}
         </Button>
@@ -247,116 +254,102 @@ function Toolbar(props: ToolbarProps) {
     const colorScheme = useComputedColorScheme();
 
     return (
-        <Flex w="100%" align="stretch">
-            <Button.Group mx="sm">
+        <div className="flex w-full items-stretch">
+            <div className={classes.toolbarGroup}>
                 <ToolbarButton
                     title={`Add torrent file (${modKeyString()} O)`}
                     onClick={() => { props.modals.current?.addTorrent(); }}
                 >
-                    <Icon.FileArrowDownFill size="1.5rem" color="var(--mantine-color-green-8)" />
+                    <Icon.FileArrowDownFill size="1.5rem" color={Palette.green[8]} />
                 </ToolbarButton>
                 <ToolbarButton
                     title={`Add magnet link (${modKeyString()} M)`}
                     onClick={() => { props.modals.current?.addMagnet(); }}
                 >
-                    <Icon.MagnetFill size="1.5rem" color="var(--mantine-color-green-8)" />
+                    <Icon.MagnetFill size="1.5rem" color={Palette.green[8]} />
                 </ToolbarButton>
-            </Button.Group>
+            </div>
 
-            <Button.Group mx="sm">
+            <div className={classes.toolbarGroup}>
                 <ToolbarButton
                     title="Start torrent (F3)"
                     onClick={handlers.start}
                 >
-                    <Icon.PlayCircleFill size="1.5rem" color="var(--mantine-color-blue-6)" />
+                    <Icon.PlayCircleFill size="1.5rem" color={Palette.blue[6]} />
                 </ToolbarButton>
                 <ToolbarButton
                     title="Pause torrent (F4)"
                     onClick={handlers.pause}
                 >
-                    <Icon.PauseCircleFill size="1.5rem" color="var(--mantine-color-blue-6)" />
+                    <Icon.PauseCircleFill size="1.5rem" color={Palette.blue[6]} />
                 </ToolbarButton>
                 <ToolbarButton
                     title="Remove torrent (del)"
                     onClick={handlers.remove}
                 >
-                    <Icon.XCircleFill size="1.5rem" color="var(--mantine-color-red-6)" />
+                    <Icon.XCircleFill size="1.5rem" color={Palette.red[6]} />
                 </ToolbarButton>
-            </Button.Group>
+            </div>
 
-            <Button.Group mx="sm">
+            <div className={classes.toolbarGroup}>
                 <ToolbarButton
                     title="Move up in queue"
                     onClick={handlers.queueUp}
                 >
-                    <Icon.ArrowUpCircleFill size="1.5rem" color="var(--mantine-color-green-8)" />
+                    <Icon.ArrowUpCircleFill size="1.5rem" color={Palette.green[8]} />
                 </ToolbarButton>
                 <ToolbarButton
                     title="Move down in queue"
                     onClick={handlers.queueDown}
                 >
-                    <Icon.ArrowDownCircleFill size="1.5rem" color="var(--mantine-color-green-8)" />
+                    <Icon.ArrowDownCircleFill size="1.5rem" color={Palette.green[8]} />
                 </ToolbarButton>
-            </Button.Group>
+            </div>
 
-            <Button.Group mx="sm">
+            <div className={classes.toolbarGroup}>
                 <ToolbarButton
                     title="Move torrent (F6)"
                     onClick={handlers.move}
                 >
-                    <Icon.FolderFill size="1.5rem" color="var(--mantine-color-yellow-4)" stroke="var(--mantine-color-yellow-5)" />
+                    <Icon.FolderFill size="1.5rem" color={Palette.yellow[4]} stroke={Palette.yellow[5]} />
                 </ToolbarButton>
                 <ToolbarButton
                     title="Set labels (F7)"
                     onClick={handlers.setLabels}
                 >
-                    <Icon.TagsFill size="1.5rem" color="var(--mantine-color-blue-6)" />
+                    <Icon.TagsFill size="1.5rem" color={Palette.blue[6]} />
                 </ToolbarButton>
 
-                <Menu
-                    shadow="md"
-                    width="10rem"
-                    withinPortal
-                    returnFocus
-                    middlewares={{ shift: true, flip: false }}
-                >
-                    <Menu.Target>
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
                         <ToolbarButton title="Set priority">
                             <PriorityIcon
                                 width="1.5rem"
                                 height="1.5rem"
-                                fill={colorScheme === "light"
-                                    ? "var(--mantine-color-yellow-6)"
-                                    : "var(--mantine-color-yellow-4)"}
+                                fill={colorScheme === "light" ? Palette.yellow[6] : Palette.yellow[4]}
                             />
                         </ToolbarButton>
-                    </Menu.Target>
+                    </DropdownMenuTrigger>
 
-                    <Menu.Dropdown>
-                        <Menu.Item
-                            leftSection={<Icon.CircleFill color="var(--mantine-color-orange-7)" />}
-                            onClick={handlers.setPriorityHigh}
-                            rightSection={<Kbd>{`${modKeyString()} H`}</Kbd>}
-                        >
+                    <DropdownMenuContent className="w-40" align="start">
+                        <DropdownMenuItem onClick={handlers.setPriorityHigh}>
+                            <Icon.CircleFill color={Palette.orange[7]} />
                             High
-                        </Menu.Item>
-                        <Menu.Item
-                            leftSection={<Icon.CircleFill color="var(--mantine-color-teal-9)" />}
-                            onClick={handlers.setPriorityNormal}
-                            rightSection={<Kbd>{`${modKeyString()} N`}</Kbd>}
-                        >
+                            <DropdownMenuShortcut><Kbd>{`${modKeyString()} H`}</Kbd></DropdownMenuShortcut>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={handlers.setPriorityNormal}>
+                            <Icon.CircleFill color={Palette.teal[9]} />
                             Normal
-                        </Menu.Item>
-                        <Menu.Item
-                            leftSection={<Icon.CircleFill color="var(--mantine-color-yellow-6)" />}
-                            onClick={handlers.setPriorityLow}
-                            rightSection={<Kbd>{`${modKeyString()} L`}</Kbd>}
-                        >
+                            <DropdownMenuShortcut><Kbd>{`${modKeyString()} N`}</Kbd></DropdownMenuShortcut>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={handlers.setPriorityLow}>
+                            <Icon.CircleFill color={Palette.yellow[6]} />
                             Low
-                        </Menu.Item>
-                    </Menu.Dropdown>
-                </Menu>
-            </Button.Group>
+                            <DropdownMenuShortcut><Kbd>{`${modKeyString()} L`}</Kbd></DropdownMenuShortcut>
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            </div>
 
             <ToolbarButton
                 title={`Turn alternative bandwidth mode ${altSpeedMode === true ? "off" : "on"} (F8)`}
@@ -368,71 +361,63 @@ function Toolbar(props: ToolbarProps) {
 
             <TextInput
                 ref={searchRef}
-                mx="sm"
+                wrapperClassName="mx-1.5 min-w-0 flex-grow justify-center"
+                inputClassName="h-full"
+                className="h-full"
                 leftSection={<Icon.Search size="1rem" />}
                 placeholder={searchPlaceholder}
-                rightSection={<ActionIcon variant="subtle" onClick={onSearchClear} title="Clear">
-                    <Icon.XLg size="1rem" color="var(--mantine-color-red-6)" />
-                </ActionIcon>}
+                rightSection={<Button
+                    variant="ghost"
+                    size="icon-sm"
+                    onClick={onSearchClear}
+                    title="Clear"
+                >
+                    <Icon.XLg size="1rem" color={Palette.red[6]} />
+                </Button>}
                 onInput={onSearchInput}
                 onFocus={() => setSearchPlaceholder("search by name or path:somepath or label:somelabel")}
                 onBlur={() => setSearchPlaceholder(`search (${modKeyString()} + f)`)}
-                styles={{ root: { flexGrow: 1 }, input: { height: "auto" } }}
                 autoComplete="off"
                 autoCorrect="off"
                 autoCapitalize="off"
                 spellCheck="false"
             />
 
-            <Menu
-                shadow="md"
-                width="12rem"
-                withinPortal
-                returnFocus
-                middlewares={{ shift: true, flip: true }}
-            >
-                <Menu.Target>
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
                     <ToolbarButton title="Layout">
                         <Icon.Grid1x2Fill size="1.5rem" style={{ transform: "rotate(-90deg)" }} />
                     </ToolbarButton>
-                </Menu.Target>
+                </DropdownMenuTrigger>
 
-                <Menu.Dropdown>
-                    <Menu.Item
-                        onClick={props.toggleMainSplit}
-                        rightSection={<Kbd>{`${modKeyString()} P`}</Kbd>}
-                    >
+                <DropdownMenuContent className="w-48" align="end">
+                    <DropdownMenuItem onClick={props.toggleMainSplit}>
                         Change layout
-                    </Menu.Item>
-                    <Menu.Item
-                        onClick={props.toggleFiltersPanel}
-                        rightSection={<Kbd>{`${modKeyString()} Y`}</Kbd>}
-                    >
+                        <DropdownMenuShortcut><Kbd>{`${modKeyString()} P`}</Kbd></DropdownMenuShortcut>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={props.toggleFiltersPanel}>
                         Toggle filters
-                    </Menu.Item>
-                    <Menu.Item
-                        onClick={props.toggleDetailsPanel}
-                        rightSection={<Kbd>{`${modKeyString()} I`}</Kbd>}
-                    >
+                        <DropdownMenuShortcut><Kbd>{`${modKeyString()} Y`}</Kbd></DropdownMenuShortcut>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={props.toggleDetailsPanel}>
                         Toggle details
-                    </Menu.Item>
+                        <DropdownMenuShortcut><Kbd>{`${modKeyString()} I`}</Kbd></DropdownMenuShortcut>
+                    </DropdownMenuItem>
                     {props.extra !== undefined
-                        && <Menu.Item
-                            onClick={props.toggleTabStrip}
-                            rightSection={<Kbd>{`${modKeyString()} [`}</Kbd>}
-                        >
+                        && <DropdownMenuItem onClick={props.toggleTabStrip}>
                             Toggle tab strip
-                        </Menu.Item>}
-                    <Menu.Divider />
-                    <Menu.Label>Interface settings</Menu.Label>
-                    <Menu.Item onClick={onSettingsExport}>
+                            <DropdownMenuShortcut><Kbd>{`${modKeyString()} [`}</Kbd></DropdownMenuShortcut>
+                        </DropdownMenuItem>}
+                    <DropdownMenuSeparator />
+                    <DropdownMenuLabel>Interface settings</DropdownMenuLabel>
+                    <DropdownMenuItem onClick={onSettingsExport}>
                         Export
-                    </Menu.Item>
-                    <Menu.Item onClick={() => { void onSettingsImport(); }}>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => { void onSettingsImport(); }}>
                         Import
-                    </Menu.Item>
-                </Menu.Dropdown>
-            </Menu>
+                    </DropdownMenuItem>
+                </DropdownMenuContent>
+            </DropdownMenu>
 
             <ToolbarButton
                 title="Polling intervals and server settings (F9)"
@@ -442,7 +427,7 @@ function Toolbar(props: ToolbarProps) {
             </ToolbarButton>
 
             {props.extra}
-        </Flex>
+        </div>
     );
 }
 

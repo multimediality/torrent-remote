@@ -1,15 +1,45 @@
 .toolbarButton {
-    background-color: light-dark(
-        var(--mantine-color-gray-1),
-        var(--mantine-color-gray-9)
-    );
-    color: light-dark(var(--mantine-color-gray-8), var(--mantine-color-gray-3));
+    height: 2.5rem;
+    padding: 0 0.5rem;
+    background-color: #f1f3f5;
+    color: #343a40;
 }
 
-.toolbarButtonDepressed {
-    background-color: light-dark(
-        var(--mantine-color-gray-3),
-        var(--mantine-color-gray-8)
-    );
+.toolbarButton:hover {
+    background-color: #e9ecef;
+}
+
+:global(.dark) .toolbarButton {
+    background-color: #212529;
+    color: #dee2e6;
+}
+
+:global(.dark) .toolbarButton:hover {
+    background-color: #2c3136;
+}
+
+.toolbarButtonDepressed,
+:global(.dark) .toolbarButtonDepressed {
+    background-color: #dee2e6;
     transform: scale(-1, 1);
+}
+
+:global(.dark) .toolbarButtonDepressed {
+    background-color: #343a40;
+}
+
+.toolbarGroup {
+    display: flex;
+    margin-inline: 0.4rem;
+}
+
+.toolbarGroup > :not(:first-child) {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+}
+
+.toolbarGroup > :not(:last-child) {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+    border-right: 1px solid rgba(127, 127, 127, 0.25);
 }

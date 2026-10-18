@@ -20,12 +20,11 @@
 import type { SectionsVisibility } from "config";
 import React, { useCallback } from "react";
 import type { ContextMenuInfo } from "./contextmenu";
-import { ContextMenu } from "./contextmenu";
+import { ContextMenu, MenuItem, MenuSpacer } from "./contextmenu";
 import type { DropResult } from "@hello-pangea/dnd";
 import { DragDropContext, Draggable } from "@hello-pangea/dnd";
 import { reorderElements } from "trutil";
 import { StrictModeDroppable } from "./strictmodedroppable";
-import { Box, Group, Menu } from "@mantine/core";
 import * as Icon from "react-bootstrap-icons";
 
 export function getSectionsMap<S extends string>(sections: SectionsVisibility<S>) {
@@ -38,7 +37,6 @@ function SectionsContextMenu<S extends string>(props: React.PropsWithChildren<{
     contextMenuInfo: ContextMenuInfo,
     setContextMenuInfo: (i: ContextMenuInfo) => void,
     onSectionItemMouseEnter?: React.MouseEventHandler<HTMLDivElement>,
-    closeOnClickOutside?: boolean,
 }>) {
     const { setSections } = props;
 
@@ -60,7 +58,6 @@ function SectionsContextMenu<S extends string>(props: React.PropsWithChildren<{
             contextMenuInfo={props.contextMenuInfo}
             setContextMenuInfo={props.setContextMenuInfo}
             closeOnItemClick={false}
-            closeOnClickOutside={props.closeOnClickOutside}
         >
             <DragDropContext onDragEnd={onDragEnd}>
                 <StrictModeDroppable droppableId="filterscontextmenu">
@@ -70,22 +67,23 @@ function SectionsContextMenu<S extends string>(props: React.PropsWithChildren<{
                                 return (
                                     <Draggable draggableId={section.section} index={index} key={section.section}>
                                         {(provided) => (
-                                            <Group
+                                            <div
                                                 ref={provided.innerRef}
                                                 onMouseEnter={props.onSectionItemMouseEnter}
                                                 {...provided.draggableProps}
-                                                wrap="nowrap"
+                                                className="flex flex-nowrap items-center gap-2"
                                             >
-                                                <Menu.Item
-                                                    leftSection={section.visible ? <Icon.Check size="1rem" /> : <Box miw="1rem" />}
+                                                <MenuItem
+                                                    className="flex-grow"
+                                                    leftSection={section.visible ? <Icon.Check size="1rem" /> : <MenuSpacer />}
                                                     onClick={() => { onSectionMenuItemClick(index); }}
                                                 >
                                                     {section.section}
-                                                </Menu.Item>
-                                                <div {...provided.dragHandleProps}>
+                                                </MenuItem>
+                                                <div {...provided.dragHandleProps} className="pr-1 text-muted-foreground">
                                                     <Icon.GripVertical size="12" />
                                                 </div>
-                                            </Group>
+                                            </div>
                                         )}
                                     </Draggable>
                                 );

@@ -22,23 +22,23 @@ import type { ServerConfig } from "../config";
 import React, { useCallback, useContext, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { Server } from "../components/server";
 import { ClientManager } from "../clientmanager";
-import { ActionIcon, Box, Button, Flex, Menu, Stack, useComputedColorScheme } from "@mantine/core";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { queryClient } from "queries";
-import { Notifications } from "@mantine/notifications";
 import { ClientContext } from "rpc/client";
 import type { ServerTabsRef } from "./servertabs";
 import { ServerTabs } from "./servertabs";
-import { useDisclosure, useHotkeys } from "@mantine/hooks";
+import { useDisclosure, useHotkeys } from "hooks";
 import * as Icon from "react-bootstrap-icons";
 import { modKeyString } from "trutil";
 import { ColorSchemeToggle, FontSizeToggle, ShowVersion } from "./miscbuttons";
 import { AppSettingsModal } from "./modals/settings";
 import { ToolbarButton } from "./toolbar";
 import { checkForUpdates } from "updater";
-import "@mantine/core/styles.css";
-import "@mantine/notifications/styles.css";
+import { useComputedColorScheme } from "./theme";
+import { Button } from "./ui/button";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "./ui/dropdown-menu";
+import { Toaster } from "./ui/sonner";
 import "css/custom.css";
 
 const { appWindow, invoke, makeCreateTorrentView } = await import(/* webpackChunkName: "taurishim" */"taurishim");
@@ -77,22 +77,22 @@ function CreateTorrentButton() {
     ]);
 
     return (
-        <ActionIcon
-            variant="default"
-            size="lg"
+        <Button
+            variant="outline"
+            size="icon-lg"
             onClick={onClick}
             title={`Create new torrent file (${modKeyString()} + T)`}
-            my="auto"
+            className="my-auto"
         >
             <Icon.Stars size="1.1rem" />
-        </ActionIcon>
+        </Button>
     );
 }
 
 export function App(props: React.PropsWithChildren) {
     return (
         <QueryClientProvider client={queryClient}>
-            <Notifications limit={5} />
+            <Toaster />
             {props.children}
             <ReactQueryDevtools />
         </QueryClientProvider>
@@ -156,7 +156,7 @@ export default function TauriApp() {
                 opened={showServerConfig}
                 close={serverConfigHandlers.close}
             />
-            <Flex direction="column" h="100%" w="100%">
+            <div className="flex h-full w-full flex-col">
                 <ServerTabs
                     ref={tabsRef}
                     clientManager={clientManager}
@@ -168,15 +168,15 @@ export default function TauriApp() {
                     <ColorSchemeToggle btn="lg" />
                     <FontSizeToggle />
                     <CreateTorrentButton />
-                    <ActionIcon
-                        size="lg"
-                        variant="default"
-                        my="auto"
+                    <Button
+                        size="icon-lg"
+                        variant="outline"
+                        className="my-auto"
                         title="Configure servers"
                         onClick={serverConfigHandlers.open}
                     >
                         <Icon.GearFill size="1.1rem" />
-                    </ActionIcon>
+                    </Button>
                 </ServerTabs>
                 {currentServer !== undefined
                     ? <ServerConfigContext.Provider value={currentServer}>
@@ -193,54 +193,43 @@ export default function TauriApp() {
                                         <Icon.GearFill size="1.5rem" />
                                     </ToolbarButton>
                                     {tabsRef.current?.getOpenTabs() !== undefined && tabsRef.current?.getOpenTabs()?.length > 1
-                                        && <Menu
-                                            shadow="md"
-                                            width="12rem"
-                                            withinPortal
-                                            returnFocus
-                                            middlewares={{ shift: true, flip: true }}
-                                        >
-                                            <Menu.Target>
+                                        && <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
                                                 <ToolbarButton title="Switch server">
                                                     <Icon.Diagram2 size="1.5rem" />
                                                 </ToolbarButton>
-                                            </Menu.Target>
+                                            </DropdownMenuTrigger>
 
-                                            <Menu.Dropdown>
+                                            <DropdownMenuContent className="w-48" align="start">
                                                 {tabsRef.current?.getOpenTabs().map((tab, index) =>
-                                                    <Menu.Item key={index} onClick={() => { tabsRef.current?.switchTab(index); }}>
+                                                    <DropdownMenuItem key={index} onClick={() => { tabsRef.current?.switchTab(index); }}>
                                                         {tab}
-                                                    </Menu.Item>)}
-                                            </Menu.Dropdown>
-                                        </Menu>}
+                                                    </DropdownMenuItem>)}
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>}
                                 </>}
                                 toggleTabStrip={toggleTabStrip}
                             />
                         </ClientContext.Provider>
                     </ServerConfigContext.Provider>
-                    : <Flex
-                        justify="center"
-                        align="center"
-                        w="100%"
-                        h="100%"
-                    >
-                        <Stack mih="20rem">
+                    : <div className="flex h-full w-full items-center justify-center">
+                        <div className="flex min-h-[20rem] flex-col gap-2">
                             {servers.map((s, i) => {
                                 return <Button
                                     key={i}
-                                    variant="subtle"
+                                    variant="ghost"
                                     onClick={() => tabsRef.current?.openTab(s.name)}
                                 >
                                     {s.name}
                                 </Button>;
                             })}
-                            <Box style={{ flexGrow: 1 }} />
+                            <div className="flex-grow" />
                             <Button onClick={serverConfigHandlers.open}>
                                 Configure servers
                             </Button>
-                        </Stack>
-                    </Flex>}
-            </Flex>
+                        </div>
+                    </div>}
+            </div>
         </App>
     );
 }

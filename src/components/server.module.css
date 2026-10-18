@@ -5,9 +5,9 @@
 }
 
 .toolbarContainer {
-    border-bottom: 1px solid var(--mantine-color-dark-3);
+    border-bottom: 1px solid var(--border-strong);
 }
 
 .statusbarContainer {
-    border-top: 1px solid var(--mantine-color-dark-3);
+    border-top: 1px solid var(--border-strong);
 }

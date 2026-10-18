@@ -45,15 +45,16 @@ export function useDisclosure(initialState = false): [boolean, DisclosureHandler
 export function useToggle<T = boolean>(options: readonly T[] = [false, true] as unknown as readonly T[]) {
     const [[option], setOption] = useState<readonly T[]>(options.slice());
 
-    const toggle = useCallback((value?: React.SetStateAction<T>) => {
+    // Like Mantine's useToggle: an explicit value selects that option, anything
+    // that is not one of the options just advances to the next one. That matters
+    // because toggles are wired straight to onClick and hotkey handlers, which
+    // pass their event object as the argument.
+    const toggle = useCallback((value?: unknown) => {
         setOption((current) => {
-            if (typeof value !== "undefined") {
-                const next = typeof value === "function" ? (value as (prev: T) => T)(current[0]) : value;
-                const index = current.indexOf(next);
-                if (index >= 0) {
-                    return [...current.slice(index), ...current.slice(0, index)];
-                }
-                return [next, ...current.slice(1)];
+            const next = typeof value === "function" ? (value as (prev: T) => T)(current[0]) : value;
+            const index = current.indexOf(next as T);
+            if (index >= 0) {
+                return [...current.slice(index), ...current.slice(0, index)];
             }
             return [...current.slice(1), current[0]];
         });

@@ -348,6 +348,11 @@ export class Config {
         try {
             const text = await readConfigText();
             merge(this.values, JSON.parse(text));
+            // Builds from 2026-10-18 could store a click event here when the
+            // layout was switched; fall back to the default for anything invalid.
+            if (this.values.interface.mainSplit !== "vertical" && this.values.interface.mainSplit !== "horizontal") {
+                this.values.interface.mainSplit = "vertical";
+            }
             const overrides = this.values.interface.styleOverrides;
             const activeTheme = this.values.interface.theme === "auto" ? "light" : this.values.interface.theme;
             if (overrides.color !== undefined) {

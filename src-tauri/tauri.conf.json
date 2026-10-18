@@ -71,7 +71,7 @@
   },
   "productName": "Torrent Remote",
   "mainBinaryName": "torrent-remote",
-  "version": "1.5.1",
+  "version": "2.0.0",
   "identifier": "io.github.scdemanett.torrentremote",
   "plugins": {
     "updater": {

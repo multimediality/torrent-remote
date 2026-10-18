@@ -303,80 +303,81 @@ function IntegrationsPanel({ form }: { form: Form }) {
     const app = form.watch("app");
 
     return (
-        <div className="grid max-w-[48rem] grid-cols-12 items-center gap-2">
-            <div className="col-span-6">Delete successfully added torrent files</div>
-            <div className="col-span-6">
-                <BigSwitch
-                    checked={app.deleteAdded}
-                    onChange={(v) => { form.setValue("app.deleteAdded", v); }}
-                />
-            </div>
-            <div className="col-span-6">Show notifications for completed torrents</div>
-            <div className="col-span-6">
-                <BigSwitch
-                    checked={app.toastNotifications}
-                    onChange={(v) => { form.setValue("app.toastNotifications", v); }}
-                />
-            </div>
-            <div className="col-span-6">Play sound for completed torrents</div>
-            <div className="col-span-6">
-                <BigSwitch
-                    checked={app.toastNotificationSound}
-                    onChange={(v) => { form.setValue("app.toastNotificationSound", v); }}
-                />
-            </div>
-            <div className="col-span-6">Launch on startup</div>
-            <div className="col-span-6">
-                <BigSwitch
-                    checked={autostart}
-                    onChange={onChangeAutostart}
-                />
-            </div>
-            {platform === "Windows" && <>
-                <div className="col-span-6">Associate application</div>
-                <div className="col-span-6 flex flex-wrap gap-2">
-                    <Button onClick={associateTorrent}>.torrent files</Button>
-                    <Button onClick={associateMagnet}>magnet links</Button>
+        <div className="flex flex-col gap-3">
+            {/* centred block of a sensible width, contents left aligned */}
+            <div className="mx-auto grid w-full max-w-[48rem] grid-cols-12 items-center gap-2">
+                <div className="col-span-6">Delete successfully added torrent files</div>
+                <div className="col-span-6">
+                    <BigSwitch
+                        checked={app.deleteAdded}
+                        onChange={(v) => { form.setValue("app.deleteAdded", v); }}
+                    />
                 </div>
-            </>}
-            <div className="col-span-6">Show tray icon (takes effect after restart)</div>
-            <div className="col-span-6">
-                <BigSwitch
-                    checked={app.showTrayIcon}
-                    onChange={(checked) => {
-                        form.setValue("app.showTrayIcon", checked);
-                        if (!checked) {
-                            form.setValue("app.onMinimize", "minimize");
-                            form.setValue("app.onClose", "quit");
-                        }
-                    }}
-                />
+                <div className="col-span-6">Show notifications for completed torrents</div>
+                <div className="col-span-6">
+                    <BigSwitch
+                        checked={app.toastNotifications}
+                        onChange={(v) => { form.setValue("app.toastNotifications", v); }}
+                    />
+                </div>
+                <div className="col-span-6">Play sound for completed torrents</div>
+                <div className="col-span-6">
+                    <BigSwitch
+                        checked={app.toastNotificationSound}
+                        onChange={(v) => { form.setValue("app.toastNotificationSound", v); }}
+                    />
+                </div>
+                <div className="col-span-6">Launch on startup</div>
+                <div className="col-span-6">
+                    <BigSwitch
+                        checked={autostart}
+                        onChange={onChangeAutostart}
+                    />
+                </div>
+                {platform === "Windows" && <>
+                    <div className="col-span-6">Associate application</div>
+                    <div className="col-span-6 flex flex-wrap gap-2">
+                        <Button onClick={associateTorrent}>.torrent files</Button>
+                        <Button onClick={associateMagnet}>magnet links</Button>
+                    </div>
+                </>}
+                <div className="col-span-6">Show tray icon (takes effect after restart)</div>
+                <div className="col-span-6">
+                    <BigSwitch
+                        checked={app.showTrayIcon}
+                        onChange={(checked) => {
+                            form.setValue("app.showTrayIcon", checked);
+                            if (!checked) {
+                                form.setValue("app.onMinimize", "minimize");
+                                form.setValue("app.onClose", "quit");
+                            }
+                        }}
+                    />
+                </div>
+                <div className="col-span-6">When minimized</div>
+                <div className="col-span-6">
+                    <SegmentedControl
+                        data={WindowMinimizeOptions}
+                        disabled={!app.showTrayIcon}
+                        value={app.onMinimize}
+                        onChange={(value) => { form.setValue("app.onMinimize", value as WindowMinimizeOption); }}
+                    />
+                </div>
+                <div className="col-span-6">When closed</div>
+                <div className="col-span-6">
+                    <SegmentedControl
+                        data={WindowCloseOptions}
+                        disabled={!app.showTrayIcon}
+                        value={app.onClose}
+                        onChange={(value) => { form.setValue("app.onClose", value as WindowCloseOption); }}
+                    />
+                </div>
             </div>
-            <div className="col-span-6">When minimized</div>
-            <div className="col-span-6">
-                <SegmentedControl
-                    data={WindowMinimizeOptions}
-                    disabled={!app.showTrayIcon}
-                    value={app.onMinimize}
-                    onChange={(value) => { form.setValue("app.onMinimize", value as WindowMinimizeOption); }}
-                />
-            </div>
-            <div className="col-span-6">When closed</div>
-            <div className="col-span-6">
-                <SegmentedControl
-                    data={WindowCloseOptions}
-                    disabled={!app.showTrayIcon}
-                    value={app.onClose}
-                    onChange={(value) => { form.setValue("app.onClose", value as WindowCloseOption); }}
-                />
-            </div>
-            <div className="col-span-12">
-                <p className="text-sm italic">
-                    Hiding the window keeps frontend running, this uses more RAM but reopening the window is nearly instant.
-                    Closing the window shuts down the webview, in this mode reopening the window is slower.
-                    You can always access the window through the system tray icon.
-                </p>
-            </div>
+            <p className="text-sm italic">
+                Hiding the window keeps frontend running, this uses more RAM but reopening the window is nearly instant.
+                Closing the window shuts down the webview, in this mode reopening the window is slower.
+                You can always access the window through the system tray icon.
+            </p>
         </div>
     );
 }

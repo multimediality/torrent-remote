@@ -172,8 +172,8 @@ pub async fn set_poller_config(
 }
 
 #[tauri::command]
-pub async fn app_integration(mode: String) -> bool {
-    crate::integrations::app_integration_impl(mode)
+pub async fn app_integration(app: tauri::AppHandle, mode: String) -> bool {
+    crate::integrations::app_integration_impl(&app, &mode)
 }
 
 #[tauri::command]

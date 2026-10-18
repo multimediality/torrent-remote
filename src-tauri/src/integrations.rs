@@ -15,6 +15,8 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+use tauri::AppHandle;
+use tauri_plugin_autostart::ManagerExt;
 #[cfg(target_os = "windows")]
 use winreg::RegKey;
 
@@ -79,47 +81,72 @@ fn register_magnet_class() -> std::io::Result<()> {
     Ok(())
 }
 
+/// Windows run key value name used by versions before tauri-plugin-autostart.
 #[cfg(target_os = "windows")]
-fn register_autorun(run: bool) -> std::io::Result<()> {
-    match std::env::current_exe() {
-        Ok(exe) => {
-            let exe = format!("\"{}\"", exe.to_str().unwrap_or_default());
-            let hkcu = RegKey::predef(winreg::enums::HKEY_CURRENT_USER);
-            let (key, _) =
-                hkcu.create_subkey("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run")?;
-            if run {
-                key.set_value(APP_NAME, &exe)?;
-            } else {
-                key.delete_value(APP_NAME)?;
-            }
+const LEGACY_RUN_KEY: &str = r"SOFTWARE\Microsoft\Windows\CurrentVersion\Run";
+
+/// Earlier versions wrote their own value to the Run key. Move it over to
+/// the plugin's entry once, so the app is not launched twice at logon.
+pub fn migrate_legacy_autostart(app: &AppHandle) {
+    #[cfg(target_os = "windows")]
+    {
+        use winreg::enums::{HKEY_CURRENT_USER, KEY_READ, KEY_WRITE};
+        let hkcu = RegKey::predef(HKEY_CURRENT_USER);
+        let Ok(key) = hkcu.open_subkey_with_flags(LEGACY_RUN_KEY, KEY_READ | KEY_WRITE) else {
+            return;
+        };
+        if key.get_value::<String, &str>(APP_NAME).is_err() {
+            return;
         }
-        Err(e) => log::error!("Error getting exe path: {e}"),
+        log::info!("Moving the legacy autostart entry to tauri-plugin-autostart");
+        if let Err(e) = key.delete_value(APP_NAME) {
+            log::error!("Error removing legacy autostart entry: {e}");
+            return;
+        }
+        if let Err(e) = app.autolaunch().enable() {
+            log::error!("Error enabling autostart: {e}");
+        }
     }
-    Ok(())
+    #[cfg(not(target_os = "windows"))]
+    let _ = app;
+}
+
+fn set_autostart(app: &AppHandle, enable: bool) -> bool {
+    let result = if enable {
+        app.autolaunch().enable()
+    } else {
+        app.autolaunch().disable()
+    };
+    match result {
+        Ok(()) => true,
+        Err(e) => {
+            log::error!("Error changing autostart: {e}");
+            false
+        }
+    }
+}
+
+pub fn app_integration_impl(app: &AppHandle, mode: &str) -> bool {
+    match mode {
+        "autostart" => {
+            log::info!("Adding app to auto start");
+            set_autostart(app, true)
+        }
+        "noautostart" => {
+            log::info!("Removing app from auto start");
+            set_autostart(app, false)
+        }
+        "getautostart" => app.autolaunch().is_enabled().unwrap_or_else(|e| {
+            log::warn!("Error checking autostart: {e}");
+            false
+        }),
+        _ => windows_integration(mode),
+    }
 }
 
 #[cfg(target_os = "windows")]
-fn check_autorun() -> bool {
-    match std::env::current_exe() {
-        Ok(exe) => {
-            let exe = format!("\"{}\"", exe.to_str().unwrap_or_default());
-            let hkcu = RegKey::predef(winreg::enums::HKEY_CURRENT_USER);
-            if let Ok((key, _)) =
-                hkcu.create_subkey("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run")
-            {
-                if let Ok(val) = key.get_value::<String, &str>(APP_NAME) {
-                    return val == exe;
-                }
-            }
-        }
-        Err(e) => log::error!("Error getting exe path: {e}"),
-    }
-    false
-}
-
-#[cfg(target_os = "windows")]
-pub fn app_integration_impl(mode: String) -> bool {
-    match mode.as_str() {
+fn windows_integration(mode: &str) -> bool {
+    match mode {
         "torrent" => {
             log::info!("Associating .torrent files with the app");
             if let Err(e) = register_app_class() {
@@ -138,30 +165,15 @@ pub fn app_integration_impl(mode: String) -> bool {
                 log::error!("Error writing to registry: {e}");
             }
         }
-        "autostart" => {
-            log::info!("Adding app to auto start");
-            if let Err(e) = register_autorun(true) {
-                log::error!("Error writing to registry: {e}");
-            }
-        }
-        "noautostart" => {
-            log::info!("Removing app from auto start");
-            if let Err(e) = register_autorun(false) {
-                log::error!("Error writing to registry: {e}");
-            }
-        }
-        "getautostart" => {
-            log::info!("Checking auto start");
-            return check_autorun();
-        }
         _ => {
-            log::warn!("Bad app_integration call");
+            log::warn!("Bad app_integration call: {mode}");
         }
     }
     false
 }
 
 #[cfg(not(target_os = "windows"))]
-pub fn app_integration_impl(_mode: String) -> bool {
+fn windows_integration(mode: &str) -> bool {
+    log::warn!("Bad app_integration call: {mode}");
     false
 }

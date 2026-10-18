@@ -230,12 +230,12 @@ function IntegrationsPanel({ form }: { form: UseFormReturnType<FormValues> }) {
     }, []);
 
     useEffect(() => {
-        if (platform === "Windows") {
+        if (TAURI) {
             invoke("app_integration", { mode: "getautostart" })
                 .then((result) => { setAutostart(result as boolean); })
                 .catch(console.error);
         }
-    }, [platform]);
+    }, []);
 
     const onChangeAutostart = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         const state = e.target.checked;
@@ -276,19 +276,19 @@ function IntegrationsPanel({ form }: { form: UseFormReturnType<FormValues> }) {
                     {...form.getInputProps("app.toastNotificationSound", { type: "checkbox" })}
                 />
             </Grid.Col>
+            <Grid.Col span={6}>Launch on startup</Grid.Col>
+            <Grid.Col span={2}>
+                <Switch
+                    onLabel="ON"
+                    offLabel="OFF"
+                    size="xl"
+                    styles={bigSwitchStyles}
+                    checked={autostart}
+                    onChange={onChangeAutostart}
+                />
+            </Grid.Col>
+            <Grid.Col span={4}></Grid.Col>
             {platform === "Windows" && <>
-                <Grid.Col span={6}>Launch on startup</Grid.Col>
-                <Grid.Col span={2}>
-                    <Switch
-                        onLabel="ON"
-                        offLabel="OFF"
-                        size="xl"
-                        styles={bigSwitchStyles}
-                        checked={autostart}
-                        onChange={onChangeAutostart}
-                    />
-                </Grid.Col>
-                <Grid.Col span={4}></Grid.Col>
                 <Grid.Col span={6}>Associate application</Grid.Col>
                 <Grid.Col span={3}><Button onClick={associateTorrent}>.torrent files</Button></Grid.Col>
                 <Grid.Col span={3}><Button onClick={associateMagnet}>magnet links</Button></Grid.Col>

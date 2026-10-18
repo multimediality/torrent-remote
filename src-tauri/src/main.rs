@@ -132,6 +132,8 @@ fn setup(app: &mut App) -> Result<(), Box<dyn std::error::Error>> {
 
     let app: AppHandle = app.handle().clone();
 
+    integrations::migrate_legacy_autostart(&app);
+
     async_runtime::spawn(async move {
         let poller_state: State<PollerHandle> = app.state();
         let mut poller = poller_state.0.lock().await;
@@ -261,6 +263,10 @@ fn main() {
         .plugin(tauri_plugin_cli::init())
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_autostart::init(
+            tauri_plugin_autostart::MacosLauncher::LaunchAgent,
+            None,
+        ))
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_clipboard_manager::init())

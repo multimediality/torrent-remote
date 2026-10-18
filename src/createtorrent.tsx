@@ -27,8 +27,9 @@ const CreateTorrentForm = lazy(async () => await import(/* webpackChunkName: "cr
 const CustomMantineProvider = lazy(
     async () => await import("components/mantinetheme"));
 
-// The window is created hidden (see makeCreateTorrentView), reveal it once
-// React has painted something so the user never sees a blank window.
+// The window is created hidden (see makeCreateTorrentView). RevealWindow is
+// rendered next to the form inside the Suspense boundary, so it mounts only
+// after the lazily loaded form has, and the user never sees a blank window.
 function RevealWindow() {
     useEffect(() => {
         void appWindow.show().then(async () => await appWindow.setFocus());
@@ -43,10 +44,10 @@ function run() {
 
     app.render(
         <React.StrictMode>
-            <RevealWindow />
             <Suspense fallback={<div />}>
                 <CustomMantineProvider>
                     <CreateTorrentForm />
+                    <RevealWindow />
                 </CustomMantineProvider>
             </Suspense>
         </React.StrictMode>,

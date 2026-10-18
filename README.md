@@ -94,13 +94,15 @@ npm run build
 ### Code signing
 
 Windows builds are Authenticode-signed through Azure Artifact Signing (account `scdemanett-signing`,
-certificate profile `scdemanett-public-trust`). The overlay `src-tauri/tauri.signed.conf.json`
-sets `bundle.windows.signCommand` to run
-[artifact-signing-cli](https://github.com/Levminer/artifact-signing-cli) with those literal values,
-and Tauri runs it on the app exe, the NSIS installer and uninstaller, and the MSI. The workflow
-installs the CLI and adds the overlay only when the repository secrets `AZURE_TENANT_ID`,
-`AZURE_CLIENT_ID` and `AZURE_CLIENT_SECRET` (an Entra app registration with the Artifact Signing
-Certificate Profile Signer role on the account) are set, so forks still build unsigned.
+certificate profile `scdemanett-public-trust`, named in `src-tauri/artifact-signing.json`). The
+overlay `src-tauri/tauri.signed.conf.json` sets `bundle.windows.signCommand` to the Windows SDK's
+signtool with Microsoft's Artifact Signing dlib, and Tauri runs it on the app exe, the NSIS
+installer and uninstaller, and the MSI, before the updater signatures are made. The workflow
+logs in with `azure/login` through OIDC (no client secret): the Entra app registration
+`github-artifact-signing` holds the Artifact Signing Certificate Profile Signer role on the account
+and a federated credential for this repository's `release` environment, which the Windows build
+jobs run in. Its IDs are the repository secrets `AZURE_TENANT_ID` and `AZURE_CLIENT_ID`; without
+them (forks) the overlay is skipped and builds stay unsigned.
 
 ## How to use Torrent Remote as a web interface
 

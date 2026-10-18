@@ -2,15 +2,21 @@
   "bundle": {
     "windows": {
       "signCommand": {
-        "cmd": "artifact-signing-cli",
+        "cmd": "C:\\Program Files (x86)\\Windows Kits\\10\\bin\\10.0.26100.0\\x64\\signtool.exe",
         "args": [
-          "-e",
-          "https://eus.codesigning.azure.net",
-          "-a",
-          "scdemanett-signing",
-          "-c",
-          "scdemanett-public-trust",
-          "-d",
+          "sign",
+          "/v",
+          "/fd",
+          "SHA256",
+          "/tr",
+          "http://timestamp.acs.microsoft.com",
+          "/td",
+          "SHA256",
+          "/dlib",
+          ".artifact-signing\\bin\\x64\\Azure.CodeSigning.Dlib.dll",
+          "/dmdf",
+          "artifact-signing.json",
+          "/d",
           "Torrent Remote",
           "%1"
         ]

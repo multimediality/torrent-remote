@@ -11,3 +11,6 @@ src/build
 
 # Tauri updater signing keys (public key is embedded in tauri.conf.json; private key + password live in 1Password)
 .tauri/
+
+# Artifact Signing client, downloaded by the release workflow
+src-tauri/.artifact-signing/

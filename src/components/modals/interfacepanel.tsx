@@ -30,6 +30,7 @@ import { ColorSchemeToggle } from "components/miscbuttons";
 import { useComputedColorScheme } from "components/theme";
 import { Palette } from "palette";
 import { RhfCheckbox, RhfNumber } from "components/formfields";
+import { Button } from "components/ui/button";
 import { NativeSelect, TextareaField } from "components/ui/fields";
 import { TagsInput } from "components/ui/tags-input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "components/ui/tabs";
@@ -63,7 +64,10 @@ function Grid({ children }: React.PropsWithChildren) {
     return <div className="mx-auto grid w-full max-w-[48rem] grid-cols-12 items-center gap-2">{children}</div>;
 }
 
-export function InterfaceSettigsPanel({ form }: { form: UseFormReturn<InterfaceFormValues> }) {
+export function InterfaceSettigsPanel({ form, onResetDialogSize }: {
+    form: UseFormReturn<InterfaceFormValues>,
+    onResetDialogSize?: () => void,
+}) {
     const colorScheme = useComputedColorScheme();
     const { style, setStyle } = useGlobalStyleOverrides();
     const [systemFonts, setSystemFonts] = useState<string[]>(["Default"]);
@@ -149,6 +153,12 @@ export function InterfaceSettigsPanel({ form }: { form: UseFormReturn<InterfaceF
                     </div>
                     <div className="col-span-6">
                         <ColorSchemeToggle />
+                    </div>
+                    <div className="col-span-6">
+                        Settings dialog size
+                    </div>
+                    <div className="col-span-6">
+                        <Button variant="light" onClick={onResetDialogSize}>Restore default size</Button>
                     </div>
                     <div className="col-span-6">
                         Font

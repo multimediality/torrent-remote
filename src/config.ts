@@ -178,6 +178,8 @@ interface Settings {
         deleteTorrentDataSelection: boolean,
         numLastSaveDirs: number,
         sortLastSaveDirs: boolean,
+        /** size the user dragged the settings dialog to, in px; undefined = default */
+        settingsDialogSize?: [number, number],
         preconfiguredLabels: string[],
         preconfiguredDirs: string[],
         ignoredTrackerPrefixes: string[],
@@ -310,6 +312,7 @@ const DefaultSettings: Settings = {
         deleteTorrentDataSelection: false,
         numLastSaveDirs: 20,
         sortLastSaveDirs: false,
+        settingsDialogSize: undefined,
         preconfiguredLabels: [],
         preconfiguredDirs: [],
         ignoredTrackerPrefixes: ["t", "tr", "tk", "tracker", "bt", "open", "opentracker"],

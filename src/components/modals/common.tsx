@@ -56,6 +56,10 @@ export interface HkModalProps extends React.PropsWithChildren {
     fullScreen?: boolean,
     /** user can drag the bottom right corner to resize, within sensible limits */
     resizable?: boolean,
+    /** inline style for the dialog, used to apply a remembered size */
+    style?: React.CSSProperties,
+    /** called (debounced) with the new size after the user resized the dialog */
+    onResized?: (size: [number, number]) => void,
     className?: string,
     bodyClassName?: string,
 }
@@ -64,8 +68,35 @@ export interface HkModalProps extends React.PropsWithChildren {
  * Dialog that suspends the application hotkeys while it is open. The first
  * element carrying `data-autofocus` receives focus when the dialog opens.
  */
-export function HkModal({ opened, onClose, title, size = "lg", fullScreen = false, resizable = false, className, bodyClassName, children }: HkModalProps) {
+export function HkModal({
+    opened, onClose, title, size = "lg", fullScreen = false, resizable = false, style, onResized, className, bodyClassName, children,
+}: HkModalProps) {
     const hk = useHotkeysContext();
+
+    // Reports user resizes. The first observation is the size the dialog opened
+    // with and is only used as the baseline, so opening alone stores nothing.
+    const contentRef = useCallback((el: HTMLDivElement | null) => {
+        if (el === null || onResized === undefined) return;
+        let baseline: [number, number] | undefined;
+        let timer: ReturnType<typeof setTimeout> | undefined;
+        const observer = new ResizeObserver(() => {
+            const current: [number, number] = [el.offsetWidth, el.offsetHeight];
+            if (baseline === undefined) {
+                baseline = current;
+                return;
+            }
+            if (current[0] === baseline[0] && current[1] === baseline[1]) return;
+            clearTimeout(timer);
+            timer = setTimeout(() => {
+                onResized(current);
+            }, 250);
+        });
+        observer.observe(el);
+        return () => {
+            clearTimeout(timer);
+            observer.disconnect();
+        };
+    }, [onResized]);
 
     useEffect(() => {
         hk.active = !opened;
@@ -87,6 +118,8 @@ export function HkModal({ opened, onClose, title, size = "lg", fullScreen = fals
     return (
         <Dialog open={opened} onOpenChange={(open) => { if (!open) onClose(); }}>
             <DialogContent
+                ref={contentRef}
+                style={style}
                 className={cn(
                     "max-h-[calc(100vh-2rem)]",
                     modalSizeClasses[size],

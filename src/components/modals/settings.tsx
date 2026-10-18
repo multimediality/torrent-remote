@@ -417,7 +417,9 @@ export function AppSettingsModal(props: AppSettingsModalProps) {
             const values = form.getValues();
             config.setServers(values.servers);
             config.values.app = { ...config.values.app, ...values.app };
-            config.values.interface = { ...config.values.interface, ...values.interface };
+            // the dialog size is written live while the dialog is open, keep it
+            const settingsDialogSize = config.values.interface.settingsDialogSize;
+            config.values.interface = { ...config.values.interface, ...values.interface, settingsDialogSize };
             config.cleanup();
             props.onSave(values.servers);
             props.close();
@@ -426,11 +428,29 @@ export function AppSettingsModal(props: AppSettingsModalProps) {
 
     const serverCount = form.watch("servers").length;
 
+    const [dialogSize, setDialogSize] = useState(config.values.interface.settingsDialogSize);
+    const onDialogResized = useCallback((size: [number, number]) => {
+        config.values.interface.settingsDialogSize = size;
+        setDialogSize(size);
+    }, [config]);
+    const resetDialogSize = useCallback(() => {
+        config.values.interface.settingsDialogSize = undefined;
+        setDialogSize(undefined);
+    }, [config]);
+    const dialogStyle = useMemo<React.CSSProperties | undefined>(() => dialogSize === undefined
+        ? undefined
+        : {
+            width: `min(${dialogSize[0]}px, calc(100vw - 2rem))`,
+            height: `min(${dialogSize[1]}px, calc(100vh - 2rem))`,
+        }, [dialogSize]);
+
     return (
         <SaveCancelModal
             opened={props.opened}
             size="lg"
             resizable
+            style={dialogStyle}
+            onResized={onDialogResized}
             onClose={props.close}
             onSave={onSave}
             title="Application Settings"
@@ -457,7 +477,10 @@ export function AppSettingsModal(props: AppSettingsModalProps) {
                     </TabsContent>
 
                     {TAURI && <TabsContent value="interface" className="flex flex-col pt-2">
-                        <InterfaceSettigsPanel form={form as unknown as UseFormReturn<InterfaceFormValues>} />
+                        <InterfaceSettigsPanel
+                            form={form as unknown as UseFormReturn<InterfaceFormValues>}
+                            onResetDialogSize={resetDialogSize}
+                        />
                     </TabsContent>}
                 </Tabs>
             </form>

@@ -80,6 +80,15 @@ jobs:
       - name: install npm packages
         run: npm ci
 
+      # Tag builds report the tag's version (v2.0.0-rc.5 -> 2.0.0-rc.5) so the
+      # updater can later move an installed pre-release to the final release.
+      - name: Set version from tag
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: bash
+        run: python3 ci/set_version.py "${GITHUB_REF_NAME#v}"
+
+      # The MSI bundler only accepts numeric pre-release identifiers, so
+      # pre-release tags skip it; the updater uses the NSIS installer anyway.
       - uses: tauri-apps/tauri-action@v0.6.2
         id: tauri_build
         env:
@@ -87,8 +96,10 @@ jobs:
           # minisign key for the in-app updater (bundle.createUpdaterArtifacts)
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          # shown in the About dialog; git describe would say "dirty" after the version step
+          TORRENT_REMOTE_VERSION: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || '' }}
         with:
-          args: --target ${{ matrix.platform.rust_target }}
+          args: --target ${{ matrix.platform.rust_target }} ${{ contains(github.ref_name, '-') && '--config {"bundle":{"targets":["app","appimage","deb","rpm","nsis"]}}' || '' }}
 
       # Updater signatures, turned into latest.json by the publish job
       - uses: actions/upload-artifact@v6

@@ -34,6 +34,8 @@ use torrentcache::TorrentCacheHandle;
 
 mod args;
 mod commands;
+#[cfg(target_os = "windows")]
+mod contextmenu;
 mod createtorrent;
 mod geoip;
 mod integrations;
@@ -301,6 +303,9 @@ fn main() {
         .on_menu_event(|app, event| if event.id().as_ref() == "appquit" {
             tray::exit(app.clone());
         });
+
+    #[cfg(target_os = "windows")]
+    let app_builder = app_builder.plugin(contextmenu::init());
 
     let app = app_builder
         .build(context)

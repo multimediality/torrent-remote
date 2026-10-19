@@ -41,6 +41,11 @@ Pick the latest successful run and scroll down to the artifacts section.
 If you previously used TrguiNG, its settings file (`trguing.json` in your OS config folder)
 is imported automatically the first time Torrent Remote starts.
 
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for how to report bugs, the branch and pull request
+workflow, and the checks CI runs.
+
 ## Compiling
 
 Prerequisites:

@@ -1,0 +1,54 @@
+name: Bug report
+description: Something doesn't work the way it should
+labels: [bug]
+body:
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what happened instead.
+      placeholder: |
+        1. Open Edit torrent trackers
+        2. Drag the corner of the tracker list
+        3. Expected it to grow, but nothing happens
+    validations:
+      required: true
+  - type: input
+    id: app-version
+    attributes:
+      label: Torrent Remote version
+      description: Click the ⓘ button in the toolbar to see it.
+      placeholder: "2.1.1"
+    validations:
+      required: true
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      options:
+        - Windows
+        - macOS
+        - Linux
+        - Web interface (served by Transmission)
+    validations:
+      required: true
+  - type: input
+    id: os-version
+    attributes:
+      label: OS version or browser
+      placeholder: "Windows 11 24H2, macOS 15, Ubuntu 24.04, Firefox 140"
+  - type: input
+    id: transmission-version
+    attributes:
+      label: Transmission version
+      placeholder: "4.0.6"
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: |
+        Windows: `%LOCALAPPDATA%\io.github.scdemanett.torrentremote\logs`
+        macOS: `~/Library/Logs/io.github.scdemanett.torrentremote`
+        Linux: `~/.local/share/io.github.scdemanett.torrentremote/logs`
+        Remove server addresses or credentials you'd rather keep private.
+      render: text

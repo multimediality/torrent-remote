@@ -142,7 +142,8 @@ export function EditTrackers(props: ModalState) {
                             control={form.control}
                             name="trackerList"
                             minRows={10}
-                            maxRows={10}
+                            maxRows={25}
+                            className="resize-y"
                             autoComplete="off"
                             autoCorrect="off"
                             autoCapitalize="off"

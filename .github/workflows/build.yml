@@ -129,7 +129,7 @@ jobs:
       # Windows builds add the signing overlay when the Azure secrets are set;
       # Tauri then signs the app exe, the NSIS installer, uninstaller and
       # plugins, and the MSI.
-      - uses: tauri-apps/tauri-action@v0.6.2
+      - uses: tauri-apps/tauri-action@v1.0.0
         id: tauri_build
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

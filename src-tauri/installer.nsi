@@ -871,6 +871,13 @@ Section Uninstall
   ${If} $R7 == "${PROGID}"
     WriteRegStr SHCTX "Software\Classes\.torrent" "" ""
   ${EndIf}
+  ; Delete what the app registers for its notifications on every start
+  ; (notification.rs): the toast sender and the click URL scheme
+  DeleteRegKey HKCU "Software\Classes\AppUserModelId\${BUNDLEID}"
+  ReadRegStr $R7 HKCU "Software\Classes\torrent-remote\shell\open\command" ""
+  ${If} $R7 == "$\"$INSTDIR\${MAINBINARYNAME}.exe$\" $\"%1$\""
+    DeleteRegKey HKCU "Software\Classes\torrent-remote"
+  ${EndIf}
   ; ============ Torrent Remote edit end =================
 
 

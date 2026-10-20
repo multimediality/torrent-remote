@@ -41,6 +41,7 @@ mod geoip;
 mod integrations;
 #[cfg(target_os = "macos")]
 mod macos;
+mod notification;
 mod poller;
 mod sound;
 mod torrentcache;
@@ -122,6 +123,9 @@ fn setup(app: &mut App) -> Result<(), Box<dyn std::error::Error>> {
                     .unwrap()
                     .iter()
                     .map(|v| v.as_str().unwrap().to_string())
+                    // a notification click that started the app, the
+                    // window is shown anyway
+                    .filter(|a| !notification::is_activation_url(a))
                     .collect();
             }
         }
@@ -135,6 +139,7 @@ fn setup(app: &mut App) -> Result<(), Box<dyn std::error::Error>> {
     let app: AppHandle = app.handle().clone();
 
     integrations::migrate_legacy_autostart(&app);
+    notification::init(&app);
 
     async_runtime::spawn(async move {
         let poller_state: State<PollerHandle> = app.state();
@@ -232,7 +237,8 @@ fn main() {
             let args: Vec<String> = argv
                 .into_iter()
                 .skip(1)
-                .filter(|a| !a.starts_with('-'))
+                // a notification click only asks for the main window
+                .filter(|a| !a.starts_with('-') && !notification::is_activation_url(a))
                 .collect();
             if args.is_empty() {
                 match app.get_webview_window("main") {

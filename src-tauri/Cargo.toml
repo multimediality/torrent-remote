@@ -48,9 +48,10 @@ features = ["native-tls", "socks", "gzip", "deflate"]
 
 [target.'cfg(windows)'.dependencies]
 winreg = "^0.56.0"
-# same versions wry uses, for filtering the WebView2 context menu
+# same versions wry uses, for filtering the WebView2 context menu and for
+# toasts that carry the app logo and open the app on a click (notification.rs)
 webview2-com = "0.39"
-windows = "0.62"
+windows = { version = "0.62", features = ["Data_Xml_Dom", "UI_Notifications"] }
 
 [target.'cfg(target_os = "macos")'.dependencies]
 

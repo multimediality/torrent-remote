@@ -22,8 +22,7 @@ use tauri::{
     async_runtime::{self, Mutex},
     AppHandle, Manager, State,
 };
-use tauri_plugin_notification::NotificationExt;
-
+use crate::notification::show_download_complete;
 use crate::sound::play_ping;
 
 #[derive(Deserialize, Debug)]
@@ -113,7 +112,7 @@ async fn process_torrents(
                 {
                     play_sound = sound;
                     if toast {
-                        show_notification(app, new_torrent.name.as_str());
+                        show_download_complete(app, new_torrent.name.as_str());
                     }
                 }
             } else if partial_update {
@@ -133,16 +132,4 @@ async fn process_torrents(
     }
 
     cache.server_data.insert(original_url.into(), map);
-}
-
-fn show_notification(app: &AppHandle, name: &str) {
-    if let Err(e) = app
-        .notification()
-        .builder()
-        .title("Download complete")
-        .body(name)
-        .show()
-    {
-        log::warn!("Cannot show notification: {e:?}");
-    }
 }

@@ -25,18 +25,46 @@ Some differentiating features:
 * Torrent creation with fast multi threaded hashing (native app only)
 * Powerful torrent filtering options
 * Latest transmission features support: labels, bandwidth groups, sequential download
-* Dark and white theme
+* Notifications and a sound when a download completes, a tray icon and in-app updates
+  (native app only)
+* Light and dark themes, or follow the system setting
 
 Transmission v2.40 or later is required.
+
+## Screenshots
+
+### Main window
+
+![Main window with the status, directory and label filters, the torrent list and the details panel](docs/screenshots/main.webp)
+
+### Settings
+
+<p>
+  <img src="docs/screenshots/settings-integrations.webp" alt="Settings, Integrations tab: notifications, sound, updates, startup, file associations and tray behavior" width="49%">
+  <img src="docs/screenshots/settings-interface.webp" alt="Settings, Interface tab: theme, font, colors, progress bars and date format" width="49%">
+</p>
+
+### Create torrent
+
+<img src="docs/screenshots/create-torrent.webp" alt="Create torrent window with file selection, piece size, comment, source, private flag, trackers and web seeds" width="415">
 
 ## Downloads
 
 Releases are published on the
-[releases page](https://github.com/scdemanett/torrent-remote/releases).
+[releases page](https://github.com/scdemanett/torrent-remote/releases):
 
-Builds of the current development version are available from github
-[build workflows](https://github.com/scdemanett/torrent-remote/actions/workflows/build.yml).
-Pick the latest successful run and scroll down to the artifacts section.
+* Windows: `x64-setup.exe` or `arm64-setup.exe` installer, or the `.msi`
+* Linux: `.AppImage`, `.deb` or `.rpm`
+* macOS: `aarch64.app.tar.gz` for Apple silicon, `x86_64.app.tar.gz` for Intel
+* Web interface: `torrent-remote-web-<version>.zip`, see below
+
+Installs from the Windows `setup.exe`, the AppImage and the macOS app update themselves. For
+the other packages, download the new version from the releases page.
+
+Maintainers can also run the
+[build workflow](https://github.com/scdemanett/torrent-remote/actions/workflows/build.yml)
+by hand to build the current development version. Open the latest successful run and scroll
+down to the artifacts section.
 
 If you previously used TrguiNG, its settings file (`trguing.json` in your OS config folder)
 is imported automatically the first time Torrent Remote starts.
@@ -53,9 +81,10 @@ Prerequisites:
 - [rust 1.92](https://www.rust-lang.org/) or later
 - Geoip lookup database in mmdb format, put it in `src-tauri`
    ```
-   wget -nv -O src-tauri/dbip.mmdb "https://github.com/openscopeproject/TrguiNG/releases/latest/download/dbip.mmdb"
+   wget -nv -O src-tauri/dbip.mmdb "https://github.com/scdemanett/torrent-remote/releases/latest/download/dbip.mmdb"
    ```
-   You can get latest db from [db-ip.com](https://db-ip.com/db/download/ip-to-country-lite).
+   You can get latest db from [db-ip.com](https://db-ip.com/db/download/ip-to-country-lite),
+   which is what `ci/fetch_latest_dbip.sh` does for release builds.
 
 To compile simply run
 
@@ -68,20 +97,23 @@ This will generate optimized bundle in `dist` and a release binary in `src-tauri
 Also installer package will be available in `src-tauri/target/release/bundle/...`.
 
 The binary is statically linked and embeds all necessary assets except for the geoip database.
-It is completely self sufficient and can be used as a portable executable but for geoip lookup to work you
-need to install the app with provided installer.
+It is completely self sufficient and can be used as a portable executable, but peer country lookup
+needs `dbip.mmdb` in the app's resource folder, which the installers set up (next to the exe on
+Windows).
 
-For development run in parallel
+For development run
 
 ```
-$ npm run webpack-serve
 $ npm run tauri-dev
 ```
 
-Webpack will automatically watch changes in `src/` and refresh the app view, tauri will watch changes
-in `src-tauri/` and rebuild/restart the app as needed.
+It starts the webpack dev server on port 8787 first. Webpack will automatically watch changes in
+`src/` and refresh the app view, tauri will watch changes in `src-tauri/` and rebuild/restart the
+app as needed.
 
 ## Releasing
+
+The steps for tagging a release are in [CONTRIBUTING.md](CONTRIBUTING.md#releases).
 
 Tagged releases (`v*`) are built by `.github/workflows/build.yml`, which signs the updater
 bundles with a minisign key and publishes `latest.json` for the in-app updater. The public key is
@@ -116,18 +148,18 @@ Transmission supports custom web interfaces, all you have to do is run the daemo
 over its `.../transmission/web/` endpoint.
 
 Example steps for debian:
-1. Download latest `torrent-remote-web-xxxx.zip` zip from the
-   [build workflows](https://github.com/scdemanett/torrent-remote/actions/workflows/build.yml)
-   artifacts or the [releases](https://github.com/scdemanett/torrent-remote/releases) page.
+1. Download the latest `torrent-remote-web-<version>.zip` from the
+   [releases](https://github.com/scdemanett/torrent-remote/releases) page.
 2. Unpack it anywhere, make sure that the user transmission runs under (by default `debian-transmission`)
    has read permissions.
-3. Edit transmission daemon systemd unit file `/etc/systemd/system/multi-user.target.wants/transmission-daemon.service`
-   and add following to `[Service]` section:
+3. Add an override for the transmission daemon service with
+   `sudo systemctl edit transmission-daemon` and put this in it:
    ```
+   [Service]
    Environment=TRANSMISSION_WEB_HOME=/path/to/extracted/torrent-remote/zip
    ```
-4. Reload the unit file with `sudo systemctl daemon-reload`
-   and restart the service `sudo systemctl restart transmission-daemon`
+   An override survives package upgrades, unlike edits to the unit file itself.
+4. Restart the service with `sudo systemctl restart transmission-daemon`
 
 ## License
 Project is distributed under GNU Affero General Public License v3, see `LICENSE.txt` for details.
